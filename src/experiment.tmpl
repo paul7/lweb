@@ -1,4 +1,4 @@
-{namespace lweb.experiment.view}
+{namespace lweb.view}
 
 {template experiment}
 	  <h1>{$header}</h1>
@@ -13,3 +13,20 @@
 	       ОЛОЛО
 	  </div>
 {/template} 
+
+{template tree-view}
+	  {if $leaf}
+	      	{for $i in range($level ? $level : 0)}
+		     &nbsp
+		{/for}
+		{$leaf}
+		<br />
+	  {else}
+		{foreach $child in $children}
+			 {call tree-view data="$child"}
+			       {param level: ($level ? $level : 0) + 1 /}
+			 {/call}
+		{/foreach}
+          {/if}
+{/template}
+
