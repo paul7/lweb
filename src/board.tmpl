@@ -1,5 +1,24 @@
 {namespace lweb.view}
 
+{template user-view-brief}
+	  <span class="userinfo">
+	       {$name}
+	  </span>
+{/template}
+
+{template message-tree-view}
+	  HERE BE DRAGONS
+{/template}
+
 {template message-view}
-	  MESSAGE
+	  <div class="head">
+	       {call user-view-brief data="$author" /}:
+	  	<span class="header">
+		      {$header}
+	        </span>
+	  </div>
+	  <div class="text">
+	       {$text}
+	  </div>
+	  {call message-tree-view data="$thread" /}
 {/template}

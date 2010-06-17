@@ -4,13 +4,16 @@
 
 (in-package :lweb)
 
-(closure-template:compile-template :common-lisp-backend
-                                   (merge-pathnames "src/experiment.tmpl"
-                                                    (asdf:component-pathname (asdf:find-system '#:lweb))))
+(defun recompile-templates ()
+  (closure-template:compile-template :common-lisp-backend
+				     (merge-pathnames "src/experiment.tmpl"
+						      (asdf:component-pathname (asdf:find-system '#:lweb))))
 
-(closure-template:compile-template :common-lisp-backend
-                                   (merge-pathnames "src/board.tmpl"
-                                                    (asdf:component-pathname (asdf:find-system '#:lweb))))
+  (closure-template:compile-template :common-lisp-backend
+				     (merge-pathnames "src/board.tmpl"
+						      (asdf:component-pathname (asdf:find-system '#:lweb)))))
+
+(recompile-templates)
 
 (setf *default-render-method*
       (lambda (obj)
@@ -21,5 +24,6 @@
 
 (restas:define-route main ("")
   (restas:redirect 'tree-view))
+
 
 
