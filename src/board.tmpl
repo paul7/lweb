@@ -6,8 +6,29 @@
 	  </span>
 {/template}
 
+{template message-subtree-view}
+	  {for $i in range($level)}
+	       &nbsp
+	  {/for}
+	  <span class="folded">
+	  	  {call user-view-brief data="$author" /}:
+		  <span class="header">
+		      <a href={$url}>{$header}</a>
+	      	  </span>
+	  </span>
+	  <div class="children">
+          {foreach $child in $children}
+	  	   {call message-subtree-view data="$child"}
+		   	 {param level: $level + 1 /}
+		   {/call}
+	  {/foreach}
+	  </div>
+{/template}
+
 {template message-tree-view}
-	  HERE BE DRAGONS
+	  {call message-subtree-view data="all"}
+	  	{param level: 0 /}
+	  {/call}	  
 {/template}
 
 {template message-view}
