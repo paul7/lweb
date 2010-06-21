@@ -50,3 +50,13 @@
 				   :parse-vars (list :id #'parse-integer))
   (render-message id))
 
+(restas:define-route message-post (":parent"
+				   :method :post
+				   :requirement #'(lambda ()
+						    (hunchentoot:post-parameter "send"))
+				   :parse-vars (list :parent #'parse-integer))
+  (restas:redirect 'message-view 
+		   :id (add-message :parent-id parent
+				    :header (hunchentoot:post-parameter "header")
+				    :text (hunchentoot:post-parameter "text"))))
+
