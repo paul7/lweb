@@ -54,6 +54,9 @@
   (clrhash *messages*)
   (setf *last-message-id* 0))
 
+(defmacro get-message (id)
+  `(gethash ,id *messages*))
+
 (defun add-message (&key 
 		    (text "Hello world")
 		    (author-id 1)
@@ -73,9 +76,6 @@
 	      (message-children-ids (gethash parent-id *messages*))))
     id))
 
-(defmacro get-message (id)
-  `(gethash ,id *messages*))
-  
 (defun get-user (id)
   (list :id id
 	:name "anonymous"))

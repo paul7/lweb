@@ -13,13 +13,18 @@
 	  <span class="folded">
 	  	  {call user-view-brief data="$author" /}:
 		  <span class="header">
+		  {if $current == $id}
+		      {$header}
+		  {else}
 		      <a href={$url}>{$header}</a>
+		  {/if}
 	      	  </span>
 	  </span>
 	  <div class="children">
           {foreach $child in $children}
 	  	   {call message-subtree-view data="$child"}
 		   	 {param level: $level + 1 /}
+			 {param current: $current /}
 		   {/call}
 	  {/foreach}
 	  </div>
@@ -41,5 +46,12 @@
 	  <div class="text">
 	       {$text}
 	  </div>
-	  {call message-tree-view data="$thread" /}
+	  {call message-tree-view data="$thread"}
+	  	{param current: $id /}
+	  {/call}
+	  <form method="post">
+	  	<input type="text" name="header" style="width: 100%" /> 
+		<textarea rows="12" name="text" name="code" cols="80" style="width: 100%"></textarea>
+		<input type="submit" name="send" value="Отправить" />
+	  </form>
 {/template}
