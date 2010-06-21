@@ -1,67 +1,33 @@
 (in-package :lweb)
 
-(defvar *messages* (make-hash-table))
-(defvar *last-message-id* 0)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun make-option-function (prefix detail)
+    (symb prefix 'with- detail)))
 
-(defun clear-messages ()
-  (clrhash *messages*)
-  (setf *last-message-id* 0))
+(defmacro defoption (prefix detail (obj &rest args) &body code)
+  `(defun ,(make-option-function prefix detail) (,obj ,@args)
+     (list* ,detail (progn ,@code)
+	    ,obj)))
 
-(defun add-message (&key 
-		    (text "Hello world")
-		    (author-id 1)
-		    (header "Hello")
-		    (visible t)
-		    (parent-id nil))
-  (let* ((id (incf *last-message-id*))
-	 (root-id (if parent-id
-		      (getf (get-message parent-id) :root-id)
-		      id))
-	 (message (list :author-id author-id
-			:id id
-			:header header
-			:text text
-			:visible visible
-			:children-ids nil
-			:root-id root-id)))
-    (setf (gethash id *messages*) message)
-    (if parent-id
-	(push id (getf (gethash parent-id *messages*) :children-ids)))
-    id))
+(defmacro with-options (prefix (&rest details) &body code)
+  (if (null details)
+      `(progn ,@code)
+      `(,(make-option-function prefix (car details))
+	 (with-options ,prefix (,@(cdr details))
+	   ,@code))))
 
-(defun get-message (id)
-  (gethash id *messages*))
-  
-(defun get-user (id)
-  (list :id id
-	:name "anonymous"))
+(defoption :message/ :author (msg)
+  (render-user (message-author-id msg)))
 
-(defun mkstr (&rest args)
-  (with-output-to-string (s)
-    (dolist (a args) (princ a s))))
+(defoption :message/ :url (msg)
+   (restas:genurl 'message-view :id (message-id msg)))
 
-(defun symb (&rest args)
-  (values (intern (apply #'mkstr args))))
-
-(defmacro with-detail (prefix detail (obj &rest args) &body code)
-  (macrolet ((make-fun-name (prefix detail)
-		   `(symb ,prefix 'with- ,detail)))
-    `(defun ,(make-fun-name prefix detail) (,obj ,@args)
-       (list* ,detail (progn ,@code)
-	      ,obj))))
-
-(with-detail :message/ :author (msg)
-  (render-user (getf msg :author-id)))
-
-(with-detail :message/ :url (msg)
-   (restas:genurl 'message-view :id (getf msg :id)))
-
-(with-detail :message/ :children (msg)
+(defoption :message/ :children (msg)
   (mapcar #'render-thread 
-	  (getf msg :children-ids)))
+	  (message-children-ids msg)))
 
-(with-detail :message/ :thread (msg)
-  (render-thread (getf msg :root-id)))
+(defoption :message/ :thread (msg)
+  (render-thread (message-root-id msg)))
 
 (defun render-user (id)
   (get-user id))
@@ -69,16 +35,15 @@
 (defun render-thread (id)
   (let ((root (get-message id)))
     (if root
-	(message/with-children
-	 (message/with-url
-	  (message/with-author root))))))
+	(with-options :message/ (:children :url :author)
+	  root)
+	hunchentoot:+http-not-found+)))
 
 (defun render-message (id)
   (let ((msg (get-message id)))
     (if msg
-	(message/with-thread
-	 (message/with-children
-	  (message/with-author msg)))
+	(with-options :message/ (:thread :children :author)
+	  msg)
 	hunchentoot:+http-not-found+)))
 
 (restas:define-route message-view (":id"
