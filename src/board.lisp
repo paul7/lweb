@@ -20,7 +20,7 @@
   (render-user (message-author-id msg)))
 
 (defoption :message/ :url (msg)
-   (restas:genurl 'message-view :id (message-id msg)))
+  (restas:genurl 'message-view :id (message-id msg)))
 
 (defoption :message/ :children (msg)
   (mapcar #'render-thread 
@@ -50,13 +50,24 @@
 				   :parse-vars (list :id #'parse-integer))
   (render-message id))
 
+(defun message-post-check (&key parent-id header text)
+  (declare (ignore text parent-id))
+  (plusp (length header)))
+
 (restas:define-route message-post (":parent"
 				   :method :post
 				   :requirement #'(lambda ()
 						    (hunchentoot:post-parameter "send"))
 				   :parse-vars (list :parent #'parse-integer))
-  (restas:redirect 'message-view 
-		   :id (add-message :parent-id parent
-				    :header (hunchentoot:post-parameter "header")
-				    :text (hunchentoot:post-parameter "text"))))
+  (let ((header (hunchentoot:post-parameter "header"))
+	(text (hunchentoot:post-parameter "text")))
+    (if (message-post-check :parent-id parent
+			    :header header
+			    :text text)
+	(restas:redirect 'message-view 
+			 :id (add-message :parent-id parent
+					  :header header
+					  :text text))
+	(restas:redirect 'message-post-bad))))
 
+(restas:define-route message-post-bad ("error"))

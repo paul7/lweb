@@ -46,6 +46,7 @@
 	  <div class="text">
 	       {$text}
 	  </div>
+	  <br />
 	  {call message-tree-view data="$thread"}
 	  	{param current: $id /}
 	  {/call}
@@ -54,4 +55,8 @@
 		<textarea rows="12" name="text" name="code" cols="80" style="width: 100%"></textarea>
 		<input type="submit" name="send" value="Отправить" />
 	  </form>
+{/template}
+
+{template message-post-bad}
+	  BAD MESSAGE
 {/template}
