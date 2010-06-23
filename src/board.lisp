@@ -68,6 +68,6 @@
 			 :id (add-message :parent-id parent
 					  :header header
 					  :text text))
-	(restas:redirect 'message-post-bad))))
-
-(restas:define-route message-post-bad ("error"))
+	(list :error "empty topic"
+	      :return parent))))
+	
