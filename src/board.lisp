@@ -12,9 +12,17 @@
 (defmacro with-options (prefix (&rest details) &body code)
   (if (null details)
       `(progn ,@code)
-      `(,(make-option-function prefix (car details))
-	 (with-options ,prefix (,@(cdr details))
-	   ,@code))))
+      (let* ((spec (car details))
+	     (simple (atom spec))
+	     (fun (if simple
+		      spec
+		      (car spec)))
+	     (aux-args (unless simple
+			 (cdr spec))))
+	`(,(make-option-function prefix fun)
+	   (with-options ,prefix (,@(cdr details))
+	     ,@code)
+	   ,@aux-args))))
 
 (defoption :message/ :author (msg)
   (render-user (message-author-id msg)))
@@ -29,6 +37,9 @@
 (defoption :message/ :thread (msg)
   (render-thread (message-root-id msg)))
 
+(defoption :message/ :user (msg id)
+  (render-user id))
+
 (defun render-user (id)
   (get-user id))
 
@@ -39,16 +50,20 @@
 	  root)
 	hunchentoot:+http-not-found+)))
 
-(defun render-message (id)
+(defun render-message (id uid)
   (let ((msg (get-message id)))
     (if msg
-	(with-options :message/ (:thread :children :author)
-	  msg)
+	(list* :login (restas:genurl 'login-form :id id)
+	       (with-options :message/ (:thread :children :author (:user uid))
+		 msg))
 	hunchentoot:+http-not-found+)))
+
+(defun get-current-user-id ()
+  (parse-integer (or (hunchentoot:cookie-in "uid") "0") :junk-allowed t))
 
 (restas:define-route message-view (":id"
 				   :parse-vars (list :id #'parse-integer))
-  (render-message id))
+  (render-message id (get-current-user-id)))
 
 (defun message-post-check (&key parent-id header text)
   (declare (ignore text parent-id))
@@ -67,7 +82,23 @@
 	(restas:redirect 'message-view 
 			 :id (add-message :parent-id parent
 					  :header header
-					  :text text))
+					  :text text
+					  :author-id (get-current-user-id)))
 	(list :error "empty topic"
 	      :return parent))))
 	
+(restas:define-route login-form ("login/:id")
+  (declare (ignore id)))
+
+(restas:define-route login-as-uid ("login/:id"
+				 :method :post
+				 :requirement #'(lambda ()
+						  (hunchentoot:post-parameter "login")))
+  (let ((new-id (or 
+		 (parse-integer (hunchentoot:post-parameter "uid") :junk-allowed t)
+		 0)))
+    (hunchentoot:set-cookie "uid" 
+			    :value (format nil "~a" new-id)
+			    :path "/"
+			    :http-only t))
+    (restas:redirect 'message-view :id id))

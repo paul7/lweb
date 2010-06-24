@@ -77,6 +77,9 @@
     id))
 
 (defun get-user (id)
-  (list :id id
-	:name "anonymous"))
-
+  (if (zerop id)
+      (list :id id
+	    :name "anonymous")
+      (list :id id
+	    :name (format nil "user-~a" id))))
+  

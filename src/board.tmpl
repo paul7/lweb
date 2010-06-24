@@ -37,6 +37,9 @@
 {/template}
 
 {template message-view}
+	  <div class="menu">
+	       <a href={$login}>Войти</a>
+	  </div>
 	  <div class="head">
 	       {call user-view-brief data="$author" /}:
 	  	<span class="header">
@@ -51,13 +54,26 @@
 	  	{param current: $id /}
 	  {/call}
 	  <form method="post">
-	  	<input type="text" name="header" style="width: 100%" /> 
-		<textarea rows="12" name="text" name="code" cols="80" style="width: 100%"></textarea>
+	  	<span class="user">
+		   {call user-view-brief data="$user" /}:   
+		</span><input type="text" name="header" /> 
+		<textarea rows="12" name="text" style="width: 100%"></textarea>
 		<input type="submit" name="send" value="Отправить" />
 	  </form>
 {/template}
 
 {template message-post}
 	  BAD MESSAGE: {$error}<br />
-	  <a href={$return}>Click here to return.</>
+	  <a href={$return}>Click here to return.</a>
+{/template}
+
+{template login-form}
+	  <form method="post">
+	  	<input type="text" name="uid" />
+		<input type="submit" name="login" value="Войти" />
+	  </form>
+{/template}
+
+{template login-as-uid}
+	  1
 {/template}

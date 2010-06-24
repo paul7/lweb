@@ -4,7 +4,10 @@
                         :components ((:file "defmodule")
 				     (:file "message"
 					    :depends-on ("defmodule"))
+				     (:file "user"
+					    :depends-on ("defmodule"))
 				     (:file "experiment"
 					    :depends-on ("defmodule"))
 				     (:file "board"
-					    :depends-on ("message"))))))
+					    :depends-on ("message"
+							 "user"))))))
