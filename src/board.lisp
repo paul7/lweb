@@ -49,10 +49,11 @@
 			    :header header
 			    :text text)
 	(restas:redirect 'message-view 
-			 :id (add-message :parent-id parent
-					  :header header
-					  :text text
-					  :author-id (get-current-user-id)))
+			 :id (message-id
+			      (make-message :parent-id parent
+					    :header header
+					    :text text
+					    :author-id (get-current-user-id))))
 	(list :error "empty topic"
 	      :return parent))))
 	

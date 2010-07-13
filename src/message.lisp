@@ -16,20 +16,20 @@
 	    :initform t 
 	    :initarg :visible 
 	    :accessor message-visible)
-   (parent :col-type (or db-null integer)
-	   :initform :null
-	   :initarg :parent 
-	   :accessor message-parent
-	   :foreign-key (message id))
-   (root :col-type (or db-null integer) 
-	 :initform :null
-	 :initarg :root 
-	 :accessor message-root
-	 :foreign-key (message id))
-   (author :col-type integer 
-	   :initform 0 
-	   :initarg :author 
-	   :accessor message-author-id))
+   (parent-id :col-type (or db-null integer)
+	      :initform :null
+	      :initarg :parent-id 
+	      :accessor message-parent-id
+	      :foreign-key (message id))
+   (root-id :col-type (or db-null integer) 
+	    :initform :null
+	    :initarg :root 
+	    :accessor message-root-id
+	    :foreign-key (message id))
+   (author-id :col-type integer 
+	      :initform 0 
+	      :initarg :author-id
+	      :accessor message-author-id))
   (:keys id)
   (:metaclass dao-class))
 
@@ -52,6 +52,6 @@
   (get-user (message-author-id message)))
 
 (defmethod render-default ((object message))
-  (build-render-list :message (:id :text :header :visible :root :author) 
+  (build-render-list :message (:id :text :header :visible :root-id :author) 
 		     object))
   
