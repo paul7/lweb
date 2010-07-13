@@ -38,7 +38,7 @@
 
 {template message-view}
 	  <div class="menu">
-	       <a href={$login}>Войти</a>
+	       <a href={$login}>Login</a>
 	  </div>
 	  <div class="head">
 	       {call user-view-brief data="$author" /}:
@@ -58,7 +58,7 @@
 		   {call user-view-brief data="$user" /}:   
 		</span><input type="text" name="header" /> 
 		<textarea rows="12" name="text" style="width: 100%"></textarea>
-		<input type="submit" name="send" value="Отправить" />
+		<input type="submit" name="send" value="Send" />
 	  </form>
 {/template}
 

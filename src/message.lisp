@@ -1,85 +1,57 @@
 (in-package :lweb)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun mkstr (&rest args)
-    (with-output-to-string (s)
-      (dolist (a args) (princ a s))))
+(defclass message ()
+  ((id :col-type serial 
+       :initarg :id 
+       :accessor message-id)
+   (text :col-type text 
+	 :initform "hello world" 
+	 :initarg :text 
+	 :accessor message-text)
+   (header :col-type text 
+	   :initform "hello" 
+	   :initarg :header 
+	   :accessor message-header)
+   (visible :col-type boolean
+	    :initform t 
+	    :initarg :visible 
+	    :accessor message-visible)
+   (parent :col-type (or db-null integer)
+	   :initform :null
+	   :initarg :parent 
+	   :accessor message-parent
+	   :foreign-key (message id))
+   (root :col-type (or db-null integer) 
+	 :initform :null
+	 :initarg :root 
+	 :accessor message-root
+	 :foreign-key (message id))
+   (author :col-type integer 
+	   :initform 0 
+	   :initarg :author 
+	   :accessor message-author-id))
+  (:keys id)
+  (:metaclass dao-class))
 
-  (defun symb (&rest args)
-    (values (intern (apply #'mkstr args)))))
-
-(defmacro build-message-accessors ((&rest keys))
+(defmacro make-message (&rest args)
   (let ((msg (gensym)))
-    `(progn
-       ,@(mapcar #'(lambda (key)
-		     `(defmacro ,(symb 'message- key) (,msg)
-			`(getf ,,msg ,',key)))
-		 keys))))
-
-(build-message-accessors (:id
-			  :text
-			  :author-id
-			  :header
-			  :visible
-			  :parent-id
-			  :parent
-			  :thread
-			  :author
-			  :root-id
-			  :children-ids))
-
-(defmacro make-message (&key 
-			id
-			(text "Hello world")
-			(author-id 1)
-			(header "Hello")
-			(visible t)
-			(parent-id nil))
-  (let ((root-id (gensym)))
-    `(let ((,root-id (if ,parent-id
-			(message-root-id (get-message ,parent-id))
-			,id)))
-       (list :author-id ,author-id
-	     :id ,id
-	     :header ,header
-	     :text ,text
-	     :visible ,visible
-	     :children-ids nil
-	     :root-id ,root-id))))
-
-(defvar *messages* (make-hash-table))
-(defvar *last-message-id* 0)
-
+    `(let ((,msg (make-instance 'message ,@args)))
+       (ensure-connection
+	 (insert-dao ,msg)))))
+     
 (defun clear-messages ()
-  (clrhash *messages*)
-  (setf *last-message-id* 0))
+  (ensure-connection 
+    (mapc #'delete-dao (select-dao 'message))
+    (values)))
 
-(defmacro get-message (id)
-  `(gethash ,id *messages*))
+(defun get-message (id)
+  (ensure-connection
+    (car (select-dao 'message (:= 'id id)))))
 
-(defun add-message (&key 
-		    (text "Hello world")
-		    (author-id 1)
-		    (header "Hello")
-		    (visible t)
-		    (parent-id nil))
-  (let* ((id (incf *last-message-id*))
-	 (message (make-message :id id
-				:text text
-				:author-id author-id
-				:header header
-				:visible visible
-				:parent-id parent-id)))
-    (setf (gethash id *messages*) message)
-    (if parent-id
-	(push id 
-	      (message-children-ids (gethash parent-id *messages*))))
-    id))
+(defun message-author (message)
+  (get-user (message-author-id message)))
 
-(defun get-user (id)
-  (if (zerop id)
-      (list :id id
-	    :name "anonymous")
-      (list :id id
-	    :name (format nil "user-~a" id))))
+(defmethod render-default ((object message))
+  (build-render-list :message (:id :text :header :visible :root :author) 
+		     object))
   

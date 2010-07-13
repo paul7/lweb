@@ -1,45 +1,4 @@
 (in-package :lweb)
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun make-option-function (prefix detail)
-    (symb prefix 'with- detail)))
-
-(defmacro defoption (prefix detail (obj &rest args) &body code)
-  `(defun ,(make-option-function prefix detail) (,obj ,@args)
-     (list* ,detail (progn ,@code)
-	    ,obj)))
-
-(defmacro with-options (prefix (&rest details) &body code)
-  (if (null details)
-      `(progn ,@code)
-      (let* ((spec (car details))
-	     (simple (atom spec))
-	     (fun (if simple
-		      spec
-		      (car spec)))
-	     (aux-args (unless simple
-			 (cdr spec))))
-	`(,(make-option-function prefix fun)
-	   (with-options ,prefix (,@(cdr details))
-	     ,@code)
-	   ,@aux-args))))
-
-(defoption :message/ :author (msg)
-  (render-user (message-author-id msg)))
-
-(defoption :message/ :url (msg)
-  (restas:genurl 'message-view :id (message-id msg)))
-
-(defoption :message/ :children (msg)
-  (mapcar #'render-thread 
-	  (message-children-ids msg)))
-
-(defoption :message/ :thread (msg)
-  (render-thread (message-root-id msg)))
-
-(defoption :message/ :user (msg id)
-  (render-user id))
-
 (defun render-user (id)
   (get-user id))
 
@@ -61,9 +20,19 @@
 (defun get-current-user-id ()
   (parse-integer (or (hunchentoot:cookie-in "uid") "0") :junk-allowed t))
 
+(defun message-login (msg)
+  (restas:genurl 'login-form :id (message-id msg)))
+
+(defun message-thread (msg)
+  (declare (ignore msg))
+  nil)
+
 (restas:define-route message-view (":id"
 				   :parse-vars (list :id #'parse-integer))
-  (render-message id (get-current-user-id)))
+  (let ((msg (get-message id)))
+    (if msg
+	(render :message (:login :thread) msg)
+	hunchentoot:+http-not-found+)))
 
 (defun message-post-check (&key parent-id header text)
   (declare (ignore text parent-id))
