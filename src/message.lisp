@@ -16,14 +16,14 @@
 	    :initform t 
 	    :initarg :visible 
 	    :accessor message-visible)
-   (parent-id :col-type (or db-null integer)
-	      :initform :null
+   (parent-id :col-type integer
+	      :initform 0
 	      :initarg :parent-id 
 	      :accessor message-parent-id
 	      :foreign-key (message id))
-   (root-id :col-type (or db-null integer) 
-	    :initform :null
-	    :initarg :root 
+   (root-id :col-type integer 
+	    :initform 0
+	    :initarg :root-id 
 	    :accessor message-root-id
 	    :foreign-key (message id))
    (author-id :col-type integer 
@@ -32,6 +32,12 @@
 	      :accessor message-author-id))
   (:keys id)
   (:metaclass dao-class))
+
+(defmethod initialize-instance :after ((msg message) &key)
+  (if (and (zerop (message-root-id msg))
+	   (not (zerop (message-parent-id msg))))
+      (setf (message-root-id msg) 
+	    (message-root-id* (get-message (message-parent-id msg))))))
 
 (defmacro make-message (&rest args)
   (let ((msg (gensym)))
@@ -51,6 +57,13 @@
 (defun message-author (message)
   (get-user (message-author-id message)))
 
+(defun message-root-id* (message)
+  (let* ((root-id (message-root-id message))
+	 (root-id* (if (zerop root-id)
+		       (message-id message)
+		       root-id)))
+    root-id*))
+    
 (defmethod render-default ((object message))
   (build-render-list :message (:id :text :header :visible :root-id :author) 
 		     object))

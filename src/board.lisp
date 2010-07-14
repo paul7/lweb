@@ -1,21 +1,4 @@
 (in-package :lweb)
-(defun render-user (id)
-  (get-user id))
-
-(defun render-thread (id)
-  (let ((root (get-message id)))
-    (if root
-	(with-options :message/ (:children :url :author)
-	  root)
-	hunchentoot:+http-not-found+)))
-
-(defun render-message (id uid)
-  (let ((msg (get-message id)))
-    (if msg
-	(list* :login (restas:genurl 'login-form :id id)
-	       (with-options :message/ (:thread :children :author (:user uid))
-		 msg))
-	hunchentoot:+http-not-found+)))
 
 (defun get-current-user-id ()
   (parse-integer (or (hunchentoot:cookie-in "uid") "0") :junk-allowed t))
@@ -23,15 +6,30 @@
 (defun message-login (msg)
   (restas:genurl 'login-form :id (message-id msg)))
 
+(defun message-url (msg)
+  (restas:genurl 'message-view :id (message-id msg)))
+
+(defun message-children (msg)
+  (ensure-connection
+    (let ((children (select-dao 'message 
+				(:= 'parent-id (message-id msg)))))
+      (mapcar #'(lambda (child)
+		  (render :message (:children :url) child))
+	      children))))
+
 (defun message-thread (msg)
+  (render :message (:children :url) 
+	  (get-message (message-root-id* msg))))
+
+(defun message-user (msg)
   (declare (ignore msg))
-  nil)
+  (get-user (get-current-user-id)))
 
 (restas:define-route message-view (":id"
 				   :parse-vars (list :id #'parse-integer))
   (let ((msg (get-message id)))
     (if msg
-	(render :message (:login :thread) msg)
+	(render :message (:login :thread :user) msg)
 	hunchentoot:+http-not-found+)))
 
 (defun message-post-check (&key parent-id header text)
