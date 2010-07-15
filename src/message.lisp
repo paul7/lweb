@@ -2,7 +2,6 @@
 
 (defclass message ()
   ((id :col-type serial 
-       :initarg :id 
        :accessor message-id)
    (text :col-type text 
 	 :initform "hello world" 
@@ -27,7 +26,7 @@
 	    :accessor message-root-id
 	    :foreign-key (message id))
    (author-id :col-type integer 
-	      :initform 0 
+	      :initform 1
 	      :initarg :author-id
 	      :accessor message-author-id))
   (:keys id)
@@ -39,23 +38,14 @@
       (setf (message-root-id msg) 
 	    (message-root-id* (get-message (message-parent-id msg))))))
 
-(defmacro make-message (&rest args)
-  (let ((msg (gensym)))
-    `(let ((,msg (make-instance 'message ,@args)))
-       (ensure-connection
-	 (insert-dao ,msg)))))
+(defmake message)
+
+(defclear message)
+
+(defget message)
      
-(defun clear-messages ()
-  (ensure-connection 
-    (mapc #'delete-dao (select-dao 'message))
-    (values)))
-
-(defun get-message (id)
-  (ensure-connection
-    (car (select-dao 'message (:= 'id id)))))
-
 (defun message-author (message)
-  (get-user (message-author-id message)))
+  (render-default (get-user (message-author-id message))))
 
 (defun message-root-id* (message)
   (let* ((root-id (message-root-id message))

@@ -8,13 +8,42 @@
        (with-connection *db-spec*
 	 ,@body)))
 
-(defun install ()
+(defmacro defmake (class)
+  `(defmacro ,(symb 'make- class) (&rest args)
+     (let ((msg (gensym)))
+       `(let ((,msg (make-instance ',',class ,@args)))
+	  (ensure-connection
+	    (insert-dao ,msg))))))
+
+(defmacro defclear (class)
+  `(defun ,(symb 'clear- class) ()
+       (ensure-connection 
+	 (execute (:delete-from ',class))
+	 (values))))
+
+(defmacro defget (class)
+  `(defun ,(symb 'get- class) (id)
+     (ensure-connection
+       (car (select-dao ',class (:= 'id id))))))
+
+(defun create-table-for-class (class)
   (ensure-connection
-    (execute (dao-table-definition 'message))
+    (execute (dao-table-definition class))
+    (values)))
+
+(defun drop-table-for-class (class)
+  (ensure-connection 
+    (execute (:drop-table class))
+    (values)))
+
+(defun install ()
+  (ensure-connection 
+    (mapc #'create-table-for-class '(message user))
+    (make-user :nick "anonymous")
     (values)))
 
 (defun uninstall ()
   (ensure-connection
-    (execute (:drop-table 'message))
+    (mapc #'drop-table-for-class '(message user))
     (values)))
   

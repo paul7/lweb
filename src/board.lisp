@@ -1,7 +1,11 @@
 (in-package :lweb)
 
-(defun get-current-user-id ()
-  (parse-integer (or (hunchentoot:cookie-in "uid") "0") :junk-allowed t))
+(defun get-current-user ()
+  (let* ((cookie-id (parse-integer 
+		     (or (hunchentoot:cookie-in "uid") "1") 
+		     :junk-allowed t))
+	 (user (get-user cookie-id)))
+    (or user (user-anonymous))))
 
 (defun message-login (msg)
   (restas:genurl 'login-form :id (message-id msg)))
@@ -23,7 +27,7 @@
 
 (defun message-user (msg)
   (declare (ignore msg))
-  (get-user (get-current-user-id)))
+  (render-default (get-current-user)))
 
 (restas:define-route message-view (":id"
 				   :parse-vars (list :id #'parse-integer))
@@ -51,7 +55,7 @@
 			      (make-message :parent-id parent
 					    :header header
 					    :text text
-					    :author-id (get-current-user-id))))
+					    :author-id (user-id (get-current-user)))))
 	(list :error "empty topic"
 	      :return parent))))
 	
