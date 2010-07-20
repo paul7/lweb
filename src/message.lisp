@@ -28,7 +28,10 @@
    (author-id :col-type integer 
 	      :initform 1
 	      :initarg :author-id
-	      :accessor message-author-id))
+	      :accessor message-author-id)
+   (children~ :initform nil
+	     :initarg :children
+	     :accessor message-children~))
   (:keys id)
   (:metaclass dao-class))
 

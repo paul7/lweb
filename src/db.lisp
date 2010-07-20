@@ -9,11 +9,10 @@
 	 ,@body)))
 
 (defmacro defmake (class)
-  `(defmacro ,(symb 'make- class) (&rest args)
-     (let ((msg (gensym)))
-       `(let ((,msg (make-instance ',',class ,@args)))
-	  (ensure-connection
-	    (insert-dao ,msg))))))
+  `(defun ,(symb 'make- class) (&rest args)
+     (let ((msg (apply #'make-instance ',class args)))
+       (ensure-connection
+	 (insert-dao msg)))))
 
 (defmacro defclear (class)
   `(defun ,(symb 'clear- class) ()
