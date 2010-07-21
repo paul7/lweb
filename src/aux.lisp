@@ -1,0 +1,52 @@
+(in-package :lweb)
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun mkstr (&rest args)
+    (with-output-to-string (s)
+      (dolist (a args) (princ a s))))
+
+  (defun symb (&rest args)
+    (values (intern (apply #'mkstr args))))
+
+  (defun make-option-function (prefix detail)
+    (symb prefix '- detail)))
+
+(defgeneric render-default (object))
+
+(defmacro build-render-list (prefix (&rest details) object)
+  (let ((gobject (gensym)))
+    `(let ((,gobject ,object))
+       (list ,@(mapcan #'(lambda (detail)
+			   `(,detail (,(make-option-function prefix detail) ,gobject)))
+		       details)))))
+
+(defmacro render (prefix (&rest details) object)
+  (let ((gobject (gensym)))
+    `(let ((,gobject ,object))
+       (nconc (build-render-list ,prefix ,details ,gobject)
+	      (render-default ,gobject)))))
+
+(defun split-on (predicate list)
+  (let ((if-true nil)
+	(if-false nil))
+    (mapc #'(lambda (each)
+	      (if (funcall predicate each)
+		  (push each if-true)
+		  (push each if-false))) 
+	  list)
+    (values (nreverse if-true)
+	    (nreverse if-false))))
+
+(defun nsplit-on (predicate list)
+  (let ((if-true (cons nil nil))
+	(if-false (cons nil nil)))
+    (let ((true-ptr if-true)
+	  (false-ptr if-false))
+      (mapl #'(lambda (each)
+		(if (funcall predicate (car each))
+		    (setf true-ptr (setf (cdr true-ptr) each))
+		    (setf false-ptr (setf (cdr false-ptr) each))))
+	    list)
+      (values (cdr if-true)
+	      (cdr if-false)))))
+
