@@ -1,8 +1,8 @@
 (in-package :lweb)
 
 (defclass user ()
-  ((id :col-type serial
-       :accessor user-id)
+  ((id   :col-type serial
+         :accessor user-id)
    (nick :col-type text
 	 :initarg :nick
 	 :accessor user-nick))
