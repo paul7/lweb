@@ -24,10 +24,9 @@
 			     (user-roles ,guser)))))
        (defun (setf ,accessor) (,ggranted ,guser)
 	 (setf (user-roles ,guser)
-	       (logior (user-roles ,guser)
-		       (if ,ggranted 
-			   ,constant
-			   0)))
+	       (if ,ggranted
+		   (logior (user-roles ,guser) ,constant)
+		   (logand (user-roles ,guser) (lognot ,constant))))
 	 ,ggranted))))
 
 (defconstant +user-can-post-premoderated+  1)
@@ -45,14 +44,18 @@
       (user-can-post-postmoderated user)))
 
 (defmethod initialize-instance :after ((user user) 
-				       &key (post-premoderated t)
-				       post-postmoderated
-				       moderate 
-				       start-threads)
-  (setf (user-can-post-premoderated user) post-premoderated)
-  (setf (user-can-post-postmoderated user) post-postmoderated)
-  (setf (user-can-moderate user) moderate)
-  (setf (user-can-start-threads user) start-threads))
+				       &key (post-premoderated t premod-p)
+				       (post-postmoderated nil postmod-p)
+				       (moderate nil mod-p)
+				       (start-threads nil start-p))
+  (if premod-p
+      (setf (user-can-post-premoderated user) post-premoderated))
+  (if postmod-p
+      (setf (user-can-post-postmoderated user) post-postmoderated))
+  (if mod-p
+      (setf (user-can-moderate user) moderate))
+  (if start-p
+      (setf (user-can-start-threads user) start-threads)))
 
 (defmake user)
 

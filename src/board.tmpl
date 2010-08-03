@@ -76,6 +76,13 @@
 	  <a href={$return}>Click here to return.</a>
 {/template}
 
+{template access-denied}
+	  <div>Access to the function you requested is denied.</div>
+	  {if $reason}
+	      <div>{$reason}</div>
+	  {/if}
+{/template}
+
 {template login-form}
 	  <form method="post">
 	  	<input type="text" name="uid" />

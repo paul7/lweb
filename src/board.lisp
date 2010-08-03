@@ -19,17 +19,22 @@
 				   :parse-vars (list :parent #'parse-integer))
   (let ((header (hunchentoot:post-parameter "header"))
 	(text (hunchentoot:post-parameter "text")))
-    (if (message-post-check :parent-id parent
-			    :header header
-			    :text text)
-	(restas:redirect 'message-view 
-			 :id (message-id
-			      (make-message :parent-id parent
-					    :header header
-					    :text text
-					    :author-id (user-id (get-current-user)))))
-	(list :error "empty topic"
-	      :return parent))))
+    (if (user-can-post (get-current-user))
+	(if (message-post-check :parent-id parent
+				:header header
+				:text text)
+	    (restas:redirect 'message-view 
+			     :id (message-id
+				  (make-message :parent-id parent
+						:header header
+						:text text
+						:author-id (user-id (get-current-user)))))
+	    (list :error "empty topic"
+		  :return parent))
+	(restas:redirect 'access-denied))))
+
+(restas:define-route access-denied ("stop")
+  (list :reason 42))
 	
 (restas:define-route login-form ("login/:id")
   (declare (ignore id)))
