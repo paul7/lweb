@@ -12,8 +12,11 @@
 					    :depends-on ("db"))
 				     (:file "experiment"
 					    :depends-on ("db"))
+				     (:file "storage"
+					    :depends-on ("db"))
 				     (:file "web-aux"
-					    :depends-on ("message"
+					    :depends-on ("storage"
+							 "message"
 							 "user"))
 				     (:file "board"
 					    :depends-on ("web-aux"))))))

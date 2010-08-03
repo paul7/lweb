@@ -38,11 +38,12 @@
 (defun install ()
   (ensure-connection 
     (mapc #'create-table-for-class '(message user))
-    (make-user :nick "anonymous")
-    (values)))
+    (make-anonymous))
+  (values))
 
 (defun uninstall ()
-  (ensure-connection
-    (mapc #'drop-table-for-class '(message user))
-    (values)))
+  (if (yes-or-no-p "This operation will purge all data. Proceed?")
+      (ensure-connection
+	(mapc #'drop-table-for-class '(message user))))
+  (values))
   
