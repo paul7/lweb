@@ -62,6 +62,15 @@
 	  </form>
 {/template}
 
+{template message-list}
+	  <div class="menu">
+	       <a href={$login}>Login</a>
+	  </div>
+	  {foreach $msg in $messages}
+	  	   {call message-tree-view data="$msg" /} <br />
+	  {/foreach}	  
+{/template}
+
 {template message-post}
 	  BAD MESSAGE: {$error}<br />
 	  <a href={$return}>Click here to return.</a>

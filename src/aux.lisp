@@ -16,6 +16,7 @@
 (defmacro build-render-list (prefix (&rest details) object)
   (let ((gobject (gensym)))
     `(let ((,gobject ,object))
+       (declare (ignorable ,gobject))
        (list ,@(mapcan #'(lambda (detail)
 			   `(,detail (,(make-option-function prefix detail) ,gobject)))
 		       details)))))

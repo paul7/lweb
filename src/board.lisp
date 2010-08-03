@@ -7,6 +7,11 @@
 	(render :message (:login :thread :user) msg)
 	hunchentoot:+http-not-found+)))
 
+(restas:define-route message-list ("index")
+  (let ((messages (ensure-connection 
+		    (select-dao 'message (:= 'parent-id 0)))))
+    (list :messages (mapcar #'message-thread messages))))
+
 (restas:define-route message-post (":parent"
 				   :method :post
 				   :requirement #'(lambda ()
@@ -40,4 +45,4 @@
 			    :value (format nil "~a" new-id)
 			    :path "/"
 			    :http-only t))
-    (restas:redirect 'message-view :id id))
+  (restas:redirect 'message-view :id id))

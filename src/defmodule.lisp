@@ -23,4 +23,4 @@
                                            obj)))))
 
 (restas:define-route main ("")
-  (restas:redirect 'message-view :id 1))
+  (restas:redirect 'message-list))
