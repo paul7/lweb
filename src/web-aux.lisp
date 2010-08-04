@@ -21,14 +21,22 @@
 (defun message-url (msg)
   (restas:genurl 'message-view :id (message-id msg)))
 
+(defun message-moderatorial (msg)
+  (if (user-can-moderate (ensure-auth *current-user*))
+      (if (message-visible msg)
+	  (list :caption "Hide"
+		:route (restas:genurl 'hide :id (message-id msg)))
+	  (list :caption "Show"
+		:route (restas:genurl 'show :id (message-id msg))))))
+
 (defun message-children (msg)
   (let ((children (message-children~ msg)))
     (mapcar #'(lambda (child)
-		(render :message (:children :url) child))
+		(render :message (:children :url :moderatorial) child))
 	    children)))
 
 (defun message-thread (msg)
-  (render :message (:children :url) 
+  (render :message (:children :url :moderatorial) 
 	  (build-tree msg)))
 
 (defun message-user (msg)
@@ -49,7 +57,8 @@
 				    (cons root 
 					  (ensure-connection 
 					    (select-dao 'message 
-							(:= 'root-id root-id)))))))
+							(:= 'root-id root-id)
+							'id))))))
 	 (parents (copy-seq elements)))
     (mapc #'(lambda (each)
 	      (let ((id (message-id each)))

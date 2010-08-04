@@ -6,6 +6,10 @@
 	  </span>
 {/template}
 
+{template moderatorial-action-view}
+	  <a href="{$route}">{$caption}</a>
+{/template}
+
 {template message-subtree-view}
 	  {for $i in range($level)}
 	       &nbsp
@@ -13,8 +17,8 @@
 	  <span class="folded">
 	  	  {call user-view-brief data="$author" /}:
 		  <span class="header">
-		  {if $visible}
-		      M
+		  {if $moderatorial}
+		      {call moderatorial-action-view data="$moderatorial" /}
 		  {/if}
 		  {if $current == $id}
 		      {$header}

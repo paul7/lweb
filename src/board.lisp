@@ -57,3 +57,24 @@
 			    :path "/"
 			    :http-only t))
   (restas:redirect 'message-view :id id))
+
+(restas:define-route show ("show/:id"
+			   :parse-vars (list :id #'parse-integer))
+  (if (user-can-moderate (ensure-auth *current-user*))
+      (let ((msg (get-message id)))
+	(setf (message-visible msg) t)
+	(ensure-connection 
+	  (update-dao msg))
+	(restas:redirect 'message-view :id id))
+      (restas:redirect 'access-denied)))
+
+(restas:define-route hide ("hide/:id"
+			   :parse-vars (list :id #'parse-integer))
+  (if (user-can-moderate (ensure-auth *current-user*))
+      (let ((msg (get-message id)))
+	(setf (message-visible msg) nil)
+	(ensure-connection 
+	  (update-dao msg))
+	(restas:redirect 'message-view :id id))
+      (restas:redirect 'access-denied)))
+
