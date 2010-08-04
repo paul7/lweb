@@ -27,11 +27,16 @@
 	 (user (get-user cookie-id)))
     (or user (user-anonymous))))
 
+(defun message-visible* (msg)
+  (or (message-visible msg)
+      (user-can-moderate (get-current-user))))
+
 (defun build-tree (msg)
   (let* ((root-id (message-root-id* msg))
 	 (root (get-message root-id))
-	 (elements (cons root (ensure-connection 
-				(select-dao 'message (:= 'root-id root-id)))))
+	 (elements (remove-if-not #'message-visible*
+				  (cons root (ensure-connection 
+					       (select-dao 'message (:= 'root-id root-id))))))
 	 (parents (copy-seq elements)))
     (mapc #'(lambda (each)
 	      (let ((id (message-id each)))

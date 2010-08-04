@@ -4,7 +4,9 @@
 				   :parse-vars (list :id #'parse-integer))
   (let ((msg (get-message id)))
     (if msg
-	(render :message (:login :thread :user) msg)
+	(if (message-visible* msg)
+	    (render :message (:login :thread :user) msg)
+	    (restas:redirect 'access-denied))
 	hunchentoot:+http-not-found+)))
 
 (restas:define-route message-list ("index")
@@ -24,13 +26,14 @@
 	(if (message-post-check :parent-id parent
 				:header header
 				:text text)
-	    (restas:redirect 'message-view 
-			     :id (message-id
-				  (make-message :parent-id parent
-						:header header
-						:text text
-						:visible (user-can-post-postmoderated user)
-						:author-id (user-id user))))
+	    (progn
+	      (make-message :parent-id parent
+			    :header header
+			    :text text
+			    :visible (user-can-post-postmoderated user)
+			    :author-id (user-id user))
+	      (restas:redirect 'message-view 
+			       :id parent))
 	    (list :error "empty topic"
 		  :return parent))
 	(restas:redirect 'access-denied))))
