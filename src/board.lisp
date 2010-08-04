@@ -18,8 +18,9 @@
 						    (hunchentoot:post-parameter "send"))
 				   :parse-vars (list :parent #'parse-integer))
   (let ((header (hunchentoot:post-parameter "header"))
-	(text (hunchentoot:post-parameter "text")))
-    (if (user-can-post (get-current-user))
+	(text (hunchentoot:post-parameter "text"))
+	(user (get-current-user)))
+    (if (user-can-post user)
 	(if (message-post-check :parent-id parent
 				:header header
 				:text text)
@@ -28,7 +29,8 @@
 				  (make-message :parent-id parent
 						:header header
 						:text text
-						:author-id (user-id (get-current-user)))))
+						:visible (user-can-post-postmoderated user)
+						:author-id (user-id user))))
 	    (list :error "empty topic"
 		  :return parent))
 	(restas:redirect 'access-denied))))

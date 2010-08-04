@@ -14,20 +14,18 @@
   (:metaclass dao-class))
 
 (defmacro defrole (role)
-  (let ((guser (gensym))
-	(ggranted (gensym))
-	(constant (symb '+user-can- role '+))
+  (let ((constant (symb '+user-can- role '+))
 	(accessor (make-option-function 'user-can role)))
     `(progn
-       (defun ,accessor (,guser)
+       (defun ,accessor (user)
 	 (not (zerop (logand ,constant
-			     (user-roles ,guser)))))
-       (defun (setf ,accessor) (,ggranted ,guser)
-	 (setf (user-roles ,guser)
-	       (if ,ggranted
-		   (logior (user-roles ,guser) ,constant)
-		   (logand (user-roles ,guser) (lognot ,constant))))
-	 ,ggranted))))
+			     (user-roles user)))))
+       (defun (setf ,accessor) (granted user)
+	 (setf (user-roles user)
+	       (if granted
+		   (logior (user-roles user) ,constant)
+		   (logand (user-roles user) (lognot ,constant))))
+	 granted))))
 
 (defconstant +user-can-post-premoderated+  1)
 (defconstant +user-can-post-postmoderated+ 2)
@@ -42,6 +40,12 @@
 (defun user-can-post (user)
   (or (user-can-post-premoderated user)
       (user-can-post-postmoderated user)))
+
+(defun (setf user-can-post) (granted user)
+  (if granted
+      (setf (user-can-post-premoderated user) t)
+      (setf (user-can-post-premoderated user) nil
+	    (user-can-post-postmoderated user) nil)))
 
 (defmethod initialize-instance :after ((user user) 
 				       &key (post-premoderated t premod-p)

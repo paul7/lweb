@@ -13,6 +13,9 @@
 	  <span class="folded">
 	  	  {call user-view-brief data="$author" /}:
 		  <span class="header">
+		  {if $visible}
+		      M
+		  {/if}
 		  {if $current == $id}
 		      {$header}
 		  {else}
