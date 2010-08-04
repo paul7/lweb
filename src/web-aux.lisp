@@ -1,5 +1,20 @@
 (in-package :lweb)
 
+(defparameter *current-user* nil)
+
+(defun get-current-user ()
+  (let* ((cookie-id (parse-integer 
+		     (or (hunchentoot:cookie-in "uid") "1") 
+		     :junk-allowed t))
+	 (user (get-user cookie-id)))
+    (or user (user-anonymous))))
+
+(defmacro ensure-auth (&body body)
+  `(if *current-user*
+       (progn ,@body)
+       (let ((*current-user* (get-current-user)))
+         ,@body)))
+
 (defun message-login (msg)
   (restas:genurl 'login-form :id (message-id msg)))
 
@@ -18,25 +33,23 @@
 
 (defun message-user (msg)
   (declare (ignore msg))
-  (render-default (get-current-user)))
-
-(defun get-current-user ()
-  (let* ((cookie-id (parse-integer 
-		     (or (hunchentoot:cookie-in "uid") "1") 
-		     :junk-allowed t))
-	 (user (get-user cookie-id)))
-    (or user (user-anonymous))))
+  (ensure-auth
+    (render-default *current-user*)))
 
 (defun message-visible* (msg)
   (or (message-visible msg)
-      (user-can-moderate (get-current-user))))
+      (ensure-auth
+	(user-can-moderate *current-user*))))
 
 (defun build-tree (msg)
   (let* ((root-id (message-root-id* msg))
 	 (root (get-message root-id))
-	 (elements (remove-if-not #'message-visible*
-				  (cons root (ensure-connection 
-					       (select-dao 'message (:= 'root-id root-id))))))
+	 (elements (ensure-auth
+		     (remove-if-not #'message-visible*
+				    (cons root 
+					  (ensure-connection 
+					    (select-dao 'message 
+							(:= 'root-id root-id)))))))
 	 (parents (copy-seq elements)))
     (mapc #'(lambda (each)
 	      (let ((id (message-id each)))

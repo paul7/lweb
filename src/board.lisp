@@ -21,7 +21,8 @@
 				   :parse-vars (list :parent #'parse-integer))
   (let ((header (hunchentoot:post-parameter "header"))
 	(text (hunchentoot:post-parameter "text"))
-	(user (get-current-user)))
+	(user (ensure-auth 
+		*current-user*)))
     (if (user-can-post user)
 	(if (message-post-check :parent-id parent
 				:header header
