@@ -2,17 +2,47 @@
 
 (restas:define-route message-view (":id"
 				   :parse-vars (list :id #'parse-integer))
-  (let ((msg (get-message id)))
-    (if msg
-	(if (message-visible* msg)
-	    (render :message (:login :thread :user) msg)
-	    (restas:redirect 'access-denied))
-	hunchentoot:+http-not-found+)))
+  (if (zerop id)
+      (restas:redirect 'message-list)
+      (let ((msg (get-message id)))
+	(if msg
+	    (if (message-visible* msg)
+		(render :message (:login :thread :user :writable :posturl) msg)
+		(restas:redirect 'access-denied))
+	    hunchentoot:+http-not-found+))))
 
 (restas:define-route message-list ("index")
   (let ((messages (ensure-connection 
-		    (select-dao 'message (:= 'parent-id 0)))))
-    (list :messages (mapcar #'message-thread messages))))
+		    (select-dao 'message (:= 'parent-id 0))))
+	(user (ensure-auth *current-user*)))
+    (list :messages (mapcar #'message-thread messages)
+	  :writable (user-can-start-threads user)
+	  :user (render :user () user)
+	  :posturl (root-posturl))))
+
+(restas:define-route start-thread ("new"
+				   :method :post
+				   :render-method #'lweb.view:message-post 
+				   :requirement #'(lambda ()
+						    (hunchentoot:post-parameter "send")))
+  (let ((header (hunchentoot:post-parameter "header"))
+	(text (hunchentoot:post-parameter "text"))
+	(user (ensure-auth 
+		*current-user*)))
+    (if (user-can-start-threads user)
+	(if (message-post-check :parent-id 0
+				:header header
+				:text text)
+	    (progn
+	      (make-message :parent-id 0
+			    :header header
+			    :text text
+			    :visible t
+			    :author-id (user-id user))
+	      (restas:redirect 'message-list))
+	    (list :error "empty topic"
+		  :return (restas:genurl 'message-list)))
+	(restas:redirect 'access-denied))))
 
 (restas:define-route message-post (":parent"
 				   :method :post

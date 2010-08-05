@@ -43,6 +43,16 @@
 	  {/call}	  
 {/template}
 
+{template message-posting-form}
+	  <form action="{$posturl}" method="post">
+	  	<span class="user">
+		   {call user-view-brief data="$user" /}:
+		</span><input type="text" name="header" /> 
+		<textarea rows="12" name="text" style="width: 100%"></textarea>
+		<input type="submit" name="send" value="Send" />
+	  </form>
+{/template}
+
 {template message-view}
 	  <div class="menu">
 	       <a href={$login}>Login</a>
@@ -60,13 +70,12 @@
 	  {call message-tree-view data="$thread"}
 	  	{param current: $id /}
 	  {/call}
-	  <form method="post">
-	  	<span class="user">
-		   {call user-view-brief data="$user" /}:
-		</span><input type="text" name="header" /> 
-		<textarea rows="12" name="text" style="width: 100%"></textarea>
-		<input type="submit" name="send" value="Send" />
-	  </form>
+	  {if $writable}
+	      {call message-posting-form}
+	      	    {param user: $user /}
+		    {param posturl: $posturl /}
+	      {/call}
+	  {/if}
 {/template}
 
 {template message-list}
@@ -75,7 +84,13 @@
 	  </div>
 	  {foreach $msg in $messages}
 	  	   {call message-tree-view data="$msg" /} <br />
-	  {/foreach}	  
+	  {/foreach}	
+	  {if $writable}
+	      {call message-posting-form}
+	      	    {param user: $user /}
+		    {param posturl: $posturl /}
+	      {/call}
+	  {/if}
 {/template}
 
 {template message-post}

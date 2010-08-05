@@ -44,6 +44,17 @@
   (ensure-auth
     (render-default *current-user*)))
 
+(defun message-writable (msg)
+  (declare (ignore msg))
+  (ensure-auth
+    (user-can-post *current-user*)))
+
+(defun message-posturl (msg)
+  (restas:genurl 'message-post :parent (message-id msg)))
+
+(defun root-posturl ()
+  (restas:genurl 'start-thread :parent 0))
+
 (defun message-visible* (msg)
   (or (message-visible msg)
       (ensure-auth
