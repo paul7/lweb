@@ -1,5 +1,19 @@
 (in-package :lweb)
 
+(setf *default-render-method*
+      (lambda (obj)
+        (closure-template.standard:xhtml-strict-frame
+         (list :title (getf obj :title)
+               :body (lweb.view:main-view 
+		      (list 
+		       :login (restas:genurl 'login :id 1)
+		       :index (restas:genurl 'message-list)
+		       :body (restas:render-object (find-package ':lweb.view)
+						   obj)))))))
+
+(restas:define-route main ("")
+  (restas:redirect 'message-list))
+
 (restas:define-route message-view (":id"
 				   :parse-vars (list :id #'parse-integer))
   (if (zerop id)

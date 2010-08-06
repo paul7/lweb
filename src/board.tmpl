@@ -1,5 +1,17 @@
 {namespace lweb.view}
 
+{template main-view}
+	  <div class="header">
+	       <a href={$login}>Login</a> <a href={$index}>Index</a>
+	  </div>
+
+	  {$body |noAutoescape}
+
+	  <div class="footer">
+	       :lweb
+	  </div>
+{/template}
+
 {template user-view-brief}
 	  <span class="userinfo">
 	       {$nick}
@@ -54,9 +66,6 @@
 {/template}
 
 {template message-view}
-	  <div class="menu">
-	       <a href={$login}>Login</a>
-	  </div>
 	  <div class="head">
 	       {call user-view-brief data="$author" /}:
 	  	<span class="header">
