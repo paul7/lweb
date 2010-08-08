@@ -1,15 +1,17 @@
 (in-package :lweb)
 
 (setf *default-render-method*
-      (lambda (obj)
-        (closure-template.standard:xhtml-strict-frame
-         (list :title (getf obj :title)
-               :body (lweb.view:main-view 
-		      (list 
-		       :login (restas:genurl 'login :id 1)
-		       :index (restas:genurl 'message-list)
-		       :body (restas:render-object (find-package ':lweb.view)
-						   obj)))))))
+      #'(lambda (obj)
+	  (closure-template.standard:xhtml-strict-frame
+	   (list :title (getf obj :title)
+		 :body (lweb.view:main-view 
+			(list 
+			 :login (restas:genurl 'login-form 
+                                               :return (hunchentoot:url-encode (hunchentoot:request-uri*)))
+			 :index (restas:genurl 'message-list)
+			 :body (restas:render-object 
+				(find-package ':lweb.view)
+				obj)))))))
 
 (restas:define-route main ("")
   (restas:redirect 'message-list))
@@ -21,7 +23,7 @@
       (let ((msg (get-message id)))
 	(if msg
 	    (if (message-visible* msg)
-		(render :message (:login :thread :user :writable :posturl) msg)
+		(render :message (:thread :user :writable :posturl) msg)
 		(restas:redirect 'access-denied))
 	    hunchentoot:+http-not-found+))))
 
@@ -86,13 +88,14 @@
 (restas:define-route access-denied ("stop")
   (list :reason 42))
 	
-(restas:define-route login-form ("login/:id")
-  (declare (ignore id)))
+(restas:define-route login-form ("login/:return")
+  (declare (ignore return)))
 
-(restas:define-route login-as-uid ("login/:id"
+(restas:define-route login-as-uid ("login/:return"
 				 :method :post
 				 :requirement #'(lambda ()
 						  (hunchentoot:post-parameter "login")))
+  (error return)
   (let ((new-id (or 
 		 (parse-integer (hunchentoot:post-parameter "uid") :junk-allowed t)
 		 0)))
