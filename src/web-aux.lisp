@@ -15,6 +15,19 @@
        (let ((*current-user* (get-current-user)))
          ,@body)))
 
+(defmacro define-moderatorial (object name &body body)
+  (let ((route (concatenate 'string
+			    (string-downcase (symbol-name name))
+			    "/:id/:return"))
+	(get-by-id (symb 'get- object)))
+    `(restas:define-route ,name (,route
+				 :parse-vars (list :id #'parse-integer))
+       (if (user-can-moderate (ensure-auth *current-user*))
+	   (let ((,object (,get-by-id id)))
+	     ,@body
+	     (restas:redirect return))
+	   (restas:redirect 'access-denied)))))
+
 (defun message-login (msg)
   (restas:genurl 'login-form :id (message-id msg)))
 
@@ -22,12 +35,26 @@
   (restas:genurl 'message-view :id (message-id msg)))
 
 (defun message-moderatorial (msg)
-  (if (user-can-moderate (ensure-auth *current-user*))
-      (if (message-visible msg)
-	  (list :caption "Hide"
-		:route (restas:genurl 'hide :id (message-id msg)))
-	  (list :caption "Show"
-		:route (restas:genurl 'show :id (message-id msg))))))
+  (let* ((id (message-id msg))
+	 (return-self (hunchentoot:url-encode
+		       (restas:genurl 'message-view :id id)))
+	 (return-parent (hunchentoot:url-encode 
+			 (restas:genurl 'message-view :id (message-parent-id msg)))))
+    (if (user-can-moderate (ensure-auth *current-user*))
+	(nconc
+	 (list (if (message-visible msg)
+		   (list :caption "Hide"
+			 :route (restas:genurl 'hide 
+					       :id id
+					       :return return-self))
+		   (list :caption "Show"
+			 :route (restas:genurl 'show 
+					       :id id
+					       :return return-self)))) 
+	 (list (list :caption "Delete"
+		     :route (restas:genurl 'erase 
+					   :id id
+					   :return return-parent)))))))
 
 (defun message-children (msg)
   (let ((children (message-children~ msg)))

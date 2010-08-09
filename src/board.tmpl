@@ -1,5 +1,9 @@
 {namespace lweb.view}
 
+{template implementation-info}
+	  {$type} {$version}
+{/template}
+
 {template main-view}
 	  <div class="header">
 	       <a href={$login}>Login</a> <a href={$index}>Index</a>
@@ -8,7 +12,8 @@
 	  {$body |noAutoescape}
 
 	  <div class="footer">
-	       :lweb
+	       Lweb @ 
+	       {call implementation-info data="$impl" /}
 	  </div>
 {/template}
 
@@ -29,9 +34,9 @@
 	  <span class="folded">
 	  	  {call user-view-brief data="$author" /}:
 		  <span class="header">
-		  {if $moderatorial}
-		      {call moderatorial-action-view data="$moderatorial" /}
-		  {/if}
+		  {foreach $action in $moderatorial}
+                      {call moderatorial-action-view data="$action" /}
+		  {/foreach}
 		  {if $current == $id}
 		      {$header}
 		  {else}
@@ -117,7 +122,7 @@
 {template login-form}
 	  <form method="post">
 	  	<input type="text" name="uid" />
-		<input type="submit" name="login" value="Войти" />
+		<input type="submit" name="login" value="Sign in" />
 	  </form>
 {/template}
 

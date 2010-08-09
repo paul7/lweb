@@ -8,6 +8,8 @@
 			(list 
 			 :login (restas:genurl 'login-form 
                                                :return (hunchentoot:url-encode (hunchentoot:request-uri*)))
+			 :impl (list :type (lisp-implementation-type)
+				     :version (lisp-implementation-version))
 			 :index (restas:genurl 'message-list)
 			 :body (restas:render-object 
 				(find-package ':lweb.view)
@@ -88,14 +90,14 @@
 (restas:define-route access-denied ("stop")
   (list :reason 42))
 	
-(restas:define-route login-form ("login/:return")
+(restas:define-route login-form ("login/:return"
+				 :render-method #'lweb.view:login-form)
   (declare (ignore return)))
 
 (restas:define-route login-as-uid ("login/:return"
 				 :method :post
 				 :requirement #'(lambda ()
 						  (hunchentoot:post-parameter "login")))
-  (error return)
   (let ((new-id (or 
 		 (parse-integer (hunchentoot:post-parameter "uid") :junk-allowed t)
 		 0)))
@@ -103,25 +105,18 @@
 			    :value (format nil "~a" new-id)
 			    :path "/"
 			    :http-only t))
-  (restas:redirect 'message-view :id id))
+  (restas:redirect return))
 
-(restas:define-route show ("show/:id"
-			   :parse-vars (list :id #'parse-integer))
-  (if (user-can-moderate (ensure-auth *current-user*))
-      (let ((msg (get-message id)))
-	(setf (message-visible msg) t)
-	(ensure-connection 
-	  (update-dao msg))
-	(restas:redirect 'message-view :id id))
-      (restas:redirect 'access-denied)))
+(define-moderatorial message show
+  (setf (message-visible message) t)
+  (ensure-connection 
+    (update-dao message)))
 
-(restas:define-route hide ("hide/:id"
-			   :parse-vars (list :id #'parse-integer))
-  (if (user-can-moderate (ensure-auth *current-user*))
-      (let ((msg (get-message id)))
-	(setf (message-visible msg) nil)
-	(ensure-connection 
-	  (update-dao msg))
-	(restas:redirect 'message-view :id id))
-      (restas:redirect 'access-denied)))
+(define-moderatorial message hide
+  (setf (message-visible message) nil)
+  (ensure-connection 
+    (update-dao message)))
 
+(define-moderatorial message erase
+  (ensure-connection 
+    (delete-dao message)))

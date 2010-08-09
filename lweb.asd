@@ -10,8 +10,6 @@
 					    :depends-on ("db"))
 				     (:file "user"
 					    :depends-on ("db"))
-				     (:file "experiment"
-					    :depends-on ("db"))
 				     (:file "web-aux"
 					    :depends-on ("message"
 							 "user"))
