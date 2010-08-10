@@ -2,6 +2,12 @@
 
 (defparameter *current-user* nil)
 
+(defparameter *current-id* nil)
+
+(defparameter *current-message* nil)
+
+(defparameter *current-thread* nil)
+
 (defun get-current-user ()
   (let* ((cookie-id (parse-integer 
 		     (or (hunchentoot:cookie-in "uid") "1") 
@@ -10,23 +16,44 @@
     (or user (user-anonymous))))
 
 (defmacro ensure-auth (&body body)
-  `(if *current-user*
-       (progn ,@body)
-       (let ((*current-user* (get-current-user)))
-         ,@body)))
+  `(let ((*current-user* *current-user*))
+     (unless *current-user*
+       (setf *current-user* (get-current-user)))
+     ,@body))
+
+(defmacro using-id (id &body body)
+  `(let ((*current-id* ,id))
+     ,@body))
+
+(defmacro ensure-message (&body body)
+  `(let ((*current-message* *current-message*))
+     (unless *current-message*
+       (setf *current-message* (get-message *current-id*)))
+     ,@body))
+
+(defun get-current-thread ()
+  (build-tree *current-message*))
+
+(defmacro ensure-thread (&body body)
+  `(let ((*current-thread* *current-thread*))
+     (unless *current-thread*
+       (setf *current-thread* (ensure-message
+				(get-current-thread))))
+     ,@body))
 
 (defmacro define-moderatorial (object name &body body)
   (let ((route (concatenate 'string
 			    (string-downcase (symbol-name name))
 			    "/:id/:return"))
-	(get-by-id (symb 'get- object)))
+	(ensure-macro (symb 'ensure- object)))
     `(restas:define-route ,name (,route
 				 :parse-vars (list :id #'parse-integer))
-       (if (user-can-moderate (ensure-auth *current-user*))
-	   (let ((,object (,get-by-id id)))
-	     ,@body
-	     (restas:redirect return))
-	   (restas:redirect 'access-denied)))))
+       (using-id id
+	 (if (user-can-moderate (ensure-auth *current-user*))
+	     (,ensure-macro 
+	      ,@body
+	      (restas:redirect return))
+	     (restas:redirect 'access-denied))))))
 
 (defun message-login (msg)
   (restas:genurl 'login-form :id (message-id msg)))
@@ -63,9 +90,10 @@
 	    children)))
 
 (defun message-thread (msg)
-  (render :message (:children :url :moderatorial) 
-	  (build-tree msg)))
-
+  (using-id (message-id msg) 
+    (render :message (:children :url :moderatorial) 
+	    (ensure-thread
+	      *current-thread*))))
 (defun message-user (msg)
   (declare (ignore msg))
   (ensure-auth

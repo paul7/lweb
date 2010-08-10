@@ -22,12 +22,14 @@
 				   :parse-vars (list :id #'parse-integer))
   (if (zerop id)
       (restas:redirect 'message-list)
-      (let ((msg (get-message id)))
-	(if msg
-	    (if (message-visible* msg)
-		(render :message (:thread :user :writable :posturl) msg)
-		(restas:redirect 'access-denied))
-	    hunchentoot:+http-not-found+))))
+      (using-id id
+	(ensure-message
+	  (if *current-message*
+	      (if (message-visible* *current-message*)
+		  (render :message (:thread :user :writable :posturl) 
+			  *current-message*)
+		  (restas:redirect 'access-denied))
+	      hunchentoot:+http-not-found+)))))
 
 (restas:define-route message-list ("index")
   (let ((messages (ensure-connection 
@@ -108,15 +110,19 @@
   (restas:redirect return))
 
 (define-moderatorial message show
-  (setf (message-visible message) t)
+  (setf (message-visible *current-message*) t)
   (ensure-connection 
-    (update-dao message)))
+    (update-dao *current-message*)))
 
 (define-moderatorial message hide
-  (setf (message-visible message) nil)
-  (ensure-connection 
-    (update-dao message)))
+  (labels ((hide-subthread (msg)
+	     (setf (message-visible msg) nil)
+	     (ensure-connection 
+	       (update-dao msg))
+	     (mapcar #'hide-subthread (message-children~ msg))))
+    (ensure-thread 
+      (hide-subthread *current-message*))))
 
 (define-moderatorial message erase
   (ensure-connection 
-    (delete-dao message)))
+    (delete-dao *current-message*)))
