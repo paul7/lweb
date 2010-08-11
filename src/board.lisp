@@ -22,7 +22,7 @@
 				   :parse-vars (list :id #'parse-integer))
   (if (zerop id)
       (restas:redirect 'message-list)
-      (let ((msg (get-message id)))
+      (let ((msg (get-message* id)))
 	(if msg
 	    (if (message-visible* msg)
 		(render :message (:thread :user :writable :posturl) msg)
@@ -31,7 +31,7 @@
 
 (restas:define-route message-list ("index")
   (let ((messages (ensure-connection 
-		    (select-dao 'message (:= 'parent-id 0))))
+		    (mapcar #'get-message* (get-root-message-ids))))
 	(user (ensure-auth *current-user*)))
     (list :messages (mapcar #'message-thread messages)
 	  :writable (user-can-start-threads user)
@@ -107,16 +107,19 @@
 			    :http-only t))
   (restas:redirect return))
 
-(define-moderatorial message show
+(define-message-action show
   (setf (message-visible message) t)
   (ensure-connection 
     (update-dao message)))
 
-(define-moderatorial message hide
-  (setf (message-visible message) nil)
-  (ensure-connection 
-    (update-dao message)))
+(define-message-action hide
+  (labels ((hide-subthread (msg)
+	     (setf (message-visible msg) nil)
+	     (update-dao msg)
+	     (mapcar #'hide-subthread (message-children~ msg))))
+    (ensure-connection 
+      (hide-subthread message))))
 
-(define-moderatorial message erase
+(define-message-action erase
   (ensure-connection 
     (delete-dao message)))

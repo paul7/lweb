@@ -31,7 +31,10 @@
 	      :accessor message-author-id)
    (children~ :initform nil
 	      :initarg :children
-	      :accessor message-children~))
+	      :accessor message-children~)
+   (thread~   :initform nil
+	      :initarg :thread
+	      :accessor message-thread~))
   (:keys id)
   (:metaclass dao-class))
 
@@ -46,7 +49,12 @@
 (defclear message)
 
 (defget message)
-     
+ 
+(defun get-root-message-ids ()
+  (ensure-connection 
+    (query (:order-by (:select 'id :from 'message :where (:= 'parent-id 0)) 'id)
+	   :column)))
+    
 (defun message-author (message)
   (render-default (get-user (message-author-id message))))
 
@@ -57,6 +65,11 @@
 		       root-id)))
     root-id*))
     
+(defun get-message* (id)
+  (multiple-value-bind (thread msg) (build-tree id)
+    (setf (message-thread~ msg) thread)
+    msg))
+
 (defmethod render-default ((object message))
   (build-render-list :message (:id :text :header :visible :root-id :author) 
 		     object))

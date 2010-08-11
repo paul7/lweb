@@ -15,15 +15,14 @@
        (let ((*current-user* (get-current-user)))
          ,@body)))
 
-(defmacro define-moderatorial (object name &body body)
+(defmacro define-message-action (name &body body)
   (let ((route (concatenate 'string
 			    (string-downcase (symbol-name name))
-			    "/:id/:return"))
-	(get-by-id (symb 'get- object)))
+			    "/:id/:return")))
     `(restas:define-route ,name (,route
 				 :parse-vars (list :id #'parse-integer))
        (if (user-can-moderate (ensure-auth *current-user*))
-	   (let ((,object (,get-by-id id)))
+	   (let ((message (get-message* id)))
 	     ,@body
 	     (restas:redirect return))
 	   (restas:redirect 'access-denied)))))
@@ -64,7 +63,7 @@
 
 (defun message-thread (msg)
   (render :message (:children :url :moderatorial) 
-	  (build-tree msg)))
+	  (message-thread~ msg)))
 
 (defun message-user (msg)
   (declare (ignore msg))
@@ -87,9 +86,11 @@
       (ensure-auth
 	(user-can-moderate *current-user*))))
 
-(defun build-tree (msg)
-  (let* ((root-id (message-root-id* msg))
+(defun build-tree (msg-id)
+  (let* ((msg (get-message msg-id))
+	 (root-id (message-root-id* msg))
 	 (root (get-message root-id))
+	 (msg-in-tree nil)
 	 (elements (ensure-auth
 		     (remove-if-not #'message-visible*
 				    (cons root 
@@ -100,6 +101,8 @@
 	 (parents (copy-seq elements)))
     (mapc #'(lambda (each)
 	      (let ((id (message-id each)))
+		(if (= id msg-id)
+		    (setf msg-in-tree each))
 		(multiple-value-bind (ours theirs)
 		    (split-on #'(lambda (each)
 				  (= (message-parent-id each) id))
@@ -107,7 +110,8 @@
 		  (setf (message-children~ each) ours)
 		  (setf elements theirs))))
 	  parents)
-    root))
+    (values root
+	    msg-in-tree)))
 
 (defun message-post-check (&key parent-id header text)
   (declare (ignore text parent-id))
