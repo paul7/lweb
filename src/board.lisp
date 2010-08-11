@@ -113,13 +113,13 @@
     (update-dao message)))
 
 (define-message-action hide
-  (labels ((hide-subthread (msg)
-	     (setf (message-visible msg) nil)
-	     (update-dao msg)
-	     (mapcar #'hide-subthread (message-children~ msg))))
-    (ensure-connection 
-      (hide-subthread message))))
-
+  (ensure-connection
+    (map-subthread #'(lambda (msg)
+		       (setf (message-visible msg) nil)
+		       (update-dao msg))
+		   message)))
+		       
 (define-message-action erase
-  (ensure-connection 
-    (delete-dao message)))
+  (ensure-connection
+    (map-subthread #'delete-dao
+		   message)))

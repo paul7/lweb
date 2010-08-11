@@ -87,31 +87,32 @@
 	(user-can-moderate *current-user*))))
 
 (defun build-tree (msg-id)
-  (let* ((msg (get-message msg-id))
-	 (root-id (message-root-id* msg))
-	 (root (get-message root-id))
-	 (msg-in-tree nil)
-	 (elements (ensure-auth
-		     (remove-if-not #'message-visible*
-				    (cons root 
-					  (ensure-connection 
-					    (select-dao 'message 
-							(:= 'root-id root-id)
-							'id))))))
-	 (parents (copy-seq elements)))
-    (mapc #'(lambda (each)
-	      (let ((id (message-id each)))
-		(if (= id msg-id)
-		    (setf msg-in-tree each))
-		(multiple-value-bind (ours theirs)
-		    (split-on #'(lambda (each)
-				  (= (message-parent-id each) id))
-			      elements)
-		  (setf (message-children~ each) ours)
-		  (setf elements theirs))))
-	  parents)
-    (values root
-	    msg-in-tree)))
+  (let ((msg (get-message msg-id)))
+    (if msg
+	(let* ((root-id (message-root-id* msg))
+	       (root (get-message root-id))
+	       (msg-in-tree nil)
+	       (elements (ensure-auth
+			   (remove-if-not #'message-visible*
+					  (cons root 
+						(ensure-connection 
+						  (select-dao 'message 
+							      (:= 'root-id root-id)
+							      'id))))))
+	       (parents (copy-seq elements)))
+	  (mapc #'(lambda (each)
+		    (let ((id (message-id each)))
+		      (if (= id msg-id)
+			  (setf msg-in-tree each))
+		      (multiple-value-bind (ours theirs)
+			  (split-on #'(lambda (each)
+					(= (message-parent-id each) id))
+				    elements)
+			(setf (message-children~ each) ours)
+			(setf elements theirs))))
+		parents)
+	  (values root
+		  msg-in-tree)))))
 
 (defun message-post-check (&key parent-id header text)
   (declare (ignore text parent-id))

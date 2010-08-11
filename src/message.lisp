@@ -67,8 +67,15 @@
     
 (defun get-message* (id)
   (multiple-value-bind (thread msg) (build-tree id)
-    (setf (message-thread~ msg) thread)
-    msg))
+    (if msg
+	(setf (message-thread~ msg) thread)
+	msg)))
+
+(defun map-subthread (fn msg)
+  (funcall fn msg)
+  (mapcar #'(lambda (child)
+	      (map-subthread fn child))
+	  (message-children~ msg)))
 
 (defmethod render-default ((object message))
   (build-render-list :message (:id :text :header :visible :root-id :author) 
