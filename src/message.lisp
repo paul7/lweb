@@ -1,4 +1,4 @@
-(in-package :lweb)
+(in-package #:lweb)
 
 (defclass message ()
   ((id        :col-type serial 
@@ -67,9 +67,9 @@
     
 (defun get-message* (id)
   (multiple-value-bind (thread msg) (build-tree id)
-    (if msg
-	(setf (message-thread~ msg) thread)
-	msg)))
+    (when msg
+      (setf (message-thread~ msg) thread)
+      msg)))
 
 (defun map-subthread (fn msg)
   (funcall fn msg)

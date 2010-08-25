@@ -1,4 +1,4 @@
-(in-package :lweb)
+(in-package #:lweb)
 
 (setf *default-render-method*
       #'(lambda (obj)

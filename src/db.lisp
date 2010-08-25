@@ -1,4 +1,4 @@
-(in-package :lweb)
+(in-package #:lweb)
 
 (defparameter *db-spec* '("lispdb" "lisp" "lisp" "localhost"))
 

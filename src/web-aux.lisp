@@ -1,4 +1,4 @@
-(in-package :lweb)
+(in-package #:lweb)
 
 (defparameter *current-user* nil)
 
@@ -23,8 +23,11 @@
 				 :parse-vars (list :id #'parse-integer))
        (if (user-can-moderate (ensure-auth *current-user*))
 	   (let ((message (get-message* id)))
-	     ,@body
-	     (restas:redirect return))
+	     (if message
+		 (progn 
+		   ,@body
+		   (restas:redirect return))
+		 (restas:redirect 'access-denied)))
 	   (restas:redirect 'access-denied)))))
 
 (defun message-login (msg)

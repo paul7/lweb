@@ -1,8 +1,8 @@
-(restas:define-module :lweb
-  (:use :cl :postmodern)
+(restas:define-module #:lweb
+  (:use #:cl #:postmodern)
   (:export))
 
-(in-package :lweb)
+(in-package #:lweb)
 
 (defun recompile-templates ()
   (closure-template:compile-template :common-lisp-backend
