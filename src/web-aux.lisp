@@ -1,4 +1,4 @@
-(in-package :lweb)
+(in-package #:lweb)
 
 (defparameter *current-user* nil)
 
@@ -41,19 +41,20 @@
 				(get-current-thread))))
      ,@body))
 
-(defmacro define-moderatorial (object name &body body)
+(defmacro define-message-action (name &body body)
   (let ((route (concatenate 'string
 			    (string-downcase (symbol-name name))
-			    "/:id/:return"))
-	(ensure-macro (symb 'ensure- object)))
+			    "/:id/:return")))
     `(restas:define-route ,name (,route
 				 :parse-vars (list :id #'parse-integer))
-       (using-id id
-	 (if (user-can-moderate (ensure-auth *current-user*))
-	     (,ensure-macro 
-	      ,@body
-	      (restas:redirect return))
-	     (restas:redirect 'access-denied))))))
+       (if (user-can-moderate (ensure-auth *current-user*))
+	   (let ((message (get-message* id)))
+	     (if message
+		 (progn 
+		   ,@body
+		   (restas:redirect return))
+		 (restas:redirect 'access-denied)))
+	   (restas:redirect 'access-denied)))))
 
 (defun message-login (msg)
   (restas:genurl 'login-form :id (message-id msg)))
@@ -90,10 +91,9 @@
 	    children)))
 
 (defun message-thread (msg)
-  (using-id (message-id msg) 
-    (render :message (:children :url :moderatorial) 
-	    (ensure-thread
-	      *current-thread*))))
+  (render :message (:children :url :moderatorial) 
+	  (message-thread~ msg)))
+
 (defun message-user (msg)
   (declare (ignore msg))
   (ensure-auth
@@ -115,27 +115,33 @@
       (ensure-auth
 	(user-can-moderate *current-user*))))
 
-(defun build-tree (msg)
-  (let* ((root-id (message-root-id* msg))
-	 (root (get-message root-id))
-	 (elements (ensure-auth
-		     (remove-if-not #'message-visible*
-				    (cons root 
-					  (ensure-connection 
-					    (select-dao 'message 
-							(:= 'root-id root-id)
-							'id))))))
-	 (parents (copy-seq elements)))
-    (mapc #'(lambda (each)
-	      (let ((id (message-id each)))
-		(multiple-value-bind (ours theirs)
-		    (split-on #'(lambda (each)
-				  (= (message-parent-id each) id))
-			      elements)
-		  (setf (message-children~ each) ours)
-		  (setf elements theirs))))
-	  parents)
-    root))
+(defun build-tree (msg-id)
+  (let ((msg (get-message msg-id)))
+    (if msg
+	(let* ((root-id (message-root-id* msg))
+	       (root (get-message root-id))
+	       (msg-in-tree nil)
+	       (elements (ensure-auth
+			   (remove-if-not #'message-visible*
+					  (cons root 
+						(ensure-connection 
+						  (select-dao 'message 
+							      (:= 'root-id root-id)
+							      'id))))))
+	       (parents (copy-seq elements)))
+	  (mapc #'(lambda (each)
+		    (let ((id (message-id each)))
+		      (if (= id msg-id)
+			  (setf msg-in-tree each))
+		      (multiple-value-bind (ours theirs)
+			  (split-on #'(lambda (each)
+					(= (message-parent-id each) id))
+				    elements)
+			(setf (message-children~ each) ours)
+			(setf elements theirs))))
+		parents)
+	  (values root
+		  msg-in-tree)))))
 
 (defun message-post-check (&key parent-id header text)
   (declare (ignore text parent-id))

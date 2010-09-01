@@ -1,4 +1,4 @@
-(in-package :lweb)
+(in-package #:lweb)
 
 (defclass user ()
   ((id    :col-type serial

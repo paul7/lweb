@@ -1,4 +1,4 @@
-(in-package :lweb)
+(in-package #:lweb)
 
 (setf *default-render-method*
       #'(lambda (obj)
@@ -22,18 +22,16 @@
 				   :parse-vars (list :id #'parse-integer))
   (if (zerop id)
       (restas:redirect 'message-list)
-      (using-id id
-	(ensure-message
-	  (if *current-message*
-	      (if (message-visible* *current-message*)
-		  (render :message (:thread :user :writable :posturl) 
-			  *current-message*)
-		  (restas:redirect 'access-denied))
-	      hunchentoot:+http-not-found+)))))
+      (let ((msg (get-message* id)))
+	(if msg
+	    (if (message-visible* msg)
+		(render :message (:thread :user :writable :posturl) msg)
+		(restas:redirect 'access-denied))
+	    hunchentoot:+http-not-found+))))
 
 (restas:define-route message-list ("index")
   (let ((messages (ensure-connection 
-		    (select-dao 'message (:= 'parent-id 0))))
+		    (mapcar #'get-message* (get-root-message-ids))))
 	(user (ensure-auth *current-user*)))
     (list :messages (mapcar #'message-thread messages)
 	  :writable (user-can-start-threads user)
@@ -109,20 +107,19 @@
 			    :http-only t))
   (restas:redirect return))
 
-(define-moderatorial message show
-  (setf (message-visible *current-message*) t)
+(define-message-action show
+  (setf (message-visible message) t)
   (ensure-connection 
     (update-dao *current-message*)))
 
-(define-moderatorial message hide
-  (labels ((hide-subthread (msg)
-	     (setf (message-visible msg) nil)
-	     (ensure-connection 
-	       (update-dao msg))
-	     (mapcar #'hide-subthread (message-children~ msg))))
-    (ensure-thread 
-      (hide-subthread *current-message*))))
-
-(define-moderatorial message erase
-  (ensure-connection 
-    (delete-dao *current-message*)))
+(define-message-action hide
+  (ensure-connection
+    (map-subthread #'(lambda (msg)
+		       (setf (message-visible msg) nil)
+		       (update-dao msg))
+		   message)))
+		       
+(define-message-action erase
+  (ensure-connection
+    (map-subthread #'delete-dao
+		   message)))

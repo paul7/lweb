@@ -1,4 +1,4 @@
-(in-package :lweb)
+(in-package #:lweb)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun mkstr (&rest args)

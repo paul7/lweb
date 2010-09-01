@@ -1,4 +1,4 @@
-(defsystem lweb
+(defsystem #:lweb
   :depends-on (#:restas #:closure-template #:postmodern)
   :components ((:module "src"
                         :components ((:file "defmodule")
