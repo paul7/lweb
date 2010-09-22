@@ -9,7 +9,8 @@
 	   message-author
 	   message-children~
 	   message-thread~
-	   render-default))
+	   render-default
+	   build-render-list))
 
 (in-package #:lweb)
 
