@@ -2,6 +2,12 @@
 
 (defparameter *current-user* nil)
 
+(defparameter *current-id* nil)
+
+(defparameter *current-message* nil)
+
+(defparameter *current-thread* nil)
+
 (defun get-current-user ()
   (let* ((cookie-id (parse-integer 
 		     (or (hunchentoot:cookie-in "uid") "1") 
@@ -10,10 +16,30 @@
     (or user (user-anonymous))))
 
 (defmacro ensure-auth (&body body)
-  `(if *current-user*
-       (progn ,@body)
-       (let ((*current-user* (get-current-user)))
-         ,@body)))
+  `(let ((*current-user* *current-user*))
+     (unless *current-user*
+       (setf *current-user* (get-current-user)))
+     ,@body))
+
+(defmacro using-id (id &body body)
+  `(let ((*current-id* ,id))
+     ,@body))
+
+(defmacro ensure-message (&body body)
+  `(let ((*current-message* *current-message*))
+     (unless *current-message*
+       (setf *current-message* (get-message *current-id*)))
+     ,@body))
+
+(defun get-current-thread ()
+  (build-tree *current-message*))
+
+(defmacro ensure-thread (&body body)
+  `(let ((*current-thread* *current-thread*))
+     (unless *current-thread*
+       (setf *current-thread* (ensure-message
+				(get-current-thread))))
+     ,@body))
 
 (defmacro define-message-action (name &body body)
   (let ((route (concatenate 'string

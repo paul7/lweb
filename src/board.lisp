@@ -110,7 +110,7 @@
 (define-message-action show
   (setf (message-visible message) t)
   (ensure-connection 
-    (update-dao message)))
+    (update-dao *current-message*)))
 
 (define-message-action hide
   (ensure-connection
