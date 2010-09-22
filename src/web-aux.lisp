@@ -99,7 +99,7 @@
 			   (remove-if-not #'message-visible*
 					  (cons root 
 						(ensure-connection 
-						  (select-dao 'message 
+						  (select-dao *message-class* 
 							      (:= 'root-id root-id)
 							      'id))))))
 	       (parents (copy-seq elements)))

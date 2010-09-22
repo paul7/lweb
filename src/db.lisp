@@ -2,6 +2,10 @@
 
 (defparameter *db-spec* '("lispdb" "lisp" "lisp" "localhost"))
 
+(defparameter *message-class* 'message)
+
+(defparameter *user-class* 'user)
+
 (defmacro ensure-connection (&body body)
   `(if *database*
        (progn ,@body)
@@ -21,9 +25,9 @@
 	 (values))))
 
 (defmacro defget (class)
-  `(defun ,(symb 'get- class) (id)
+  `(defun ,(symb 'get- class) (id &key (class ,(symb '* class '-class*)))
      (ensure-connection
-       (car (select-dao ',class (:= 'id id))))))
+       (car (select-dao class (:= 'id id))))))
 
 (defun create-table-for-class (class)
   (ensure-connection

@@ -52,10 +52,10 @@
  
 (defun get-root-message-ids ()
   (ensure-connection 
-    (query (:order-by (:select 'id :from 'message :where (:= 'parent-id 0)) 'id)
+    (query (:order-by (:select 'id :from *message-class* :where (:= 'parent-id 0)) 'id)
 	   :column)))
     
-(defun message-author (message)
+(defmethod message-author (message)
   (render-default (get-user (message-author-id message))))
 
 (defun message-root-id* (message)
