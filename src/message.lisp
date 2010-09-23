@@ -50,9 +50,10 @@
 
 (defget message)
  
-(defun get-root-message-ids ()
+(defun get-root-message-ids (&key (limit *index-limit*))
   (ensure-connection 
-    (query (:order-by (:select 'id :from *message-class* :where (:= 'parent-id 0)) 'id)
+    (query (:order-by (:limit (:select 'id :from *message-class* :where (:= 'parent-id 0)) limit) 
+		      (:desc 'id))
 	   :column)))
     
 (defmethod message-author (message)

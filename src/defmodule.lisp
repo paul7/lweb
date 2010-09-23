@@ -14,6 +14,8 @@
 
 (in-package #:lweb)
 
+(defparameter *index-limit* 10)
+
 (defun recompile-templates ()
   (closure-template:compile-template :common-lisp-backend
 				     (merge-pathnames "src/board.tmpl"

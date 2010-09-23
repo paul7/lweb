@@ -1,6 +1,6 @@
 (in-package #:lweb)
 
-(defparameter *db-spec* '("lispdb" "lisp" "lisp" "localhost"))
+(defparameter *db-spec* '("lispdb" "lisp" "lisp" "localhost" :pooled-p t))
 
 (defparameter *message-class* 'message)
 
