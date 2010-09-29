@@ -95,13 +95,18 @@
 	(let* ((root-id (message-root-id* msg))
 	       (root (get-message root-id))
 	       (msg-in-tree nil)
-	       (elements (ensure-auth
-			   (remove-if-not #'message-visible*
-					  (cons root 
-						(ensure-connection 
-						  (select-dao *message-class* 
-							      (:= 'root-id root-id)
-							      'id))))))
+	       (elements 
+		(ensure-auth
+		  (remove-if-not #'message-visible*
+				 (cons root 
+				       (ensure-connection 
+					 (if *reverse-order* 
+					     (select-dao *message-class* 
+							 (:= 'root-id root-id)
+							 (:desc 'id))
+					     (select-dao *message-class* 
+							 (:= 'root-id root-id)
+							 'id)))))))
 	       (parents (copy-seq elements)))
 	  (mapc #'(lambda (each)
 		    (let ((id (message-id each)))

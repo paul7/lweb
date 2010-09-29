@@ -16,6 +16,8 @@
 
 (defparameter *index-limit* 10)
 
+(defparameter *reverse-order* nil)
+
 (defun recompile-templates ()
   (closure-template:compile-template :common-lisp-backend
 				     (merge-pathnames "src/board.tmpl"
