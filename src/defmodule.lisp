@@ -1,16 +1,19 @@
 (restas:define-module #:lweb
     (:use #:cl #:postmodern #:iterate)
-  (:export message-id 
-	   message-text 
-	   message-header 
-	   message-visible 
-	   message-parent-id
-	   message-root-id 
-	   message-author
-	   message-children~
-	   message-thread~
-	   render-default
-	   build-render-list))
+  (:export #:message-id 
+	   #:message-text 
+	   #:message-header 
+	   #:message-visible 
+	   #:message-parent-id
+	   #:message-root-id 
+	   #:message-author
+	   #:message-children~
+	   #:message-thread~
+	   #:render-default
+	   #:build-render-list
+	   #:*message-class*
+	   #:*index-limit*
+	   #:*reverse-order*))
 
 (in-package #:lweb)
 
