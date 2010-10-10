@@ -1,5 +1,5 @@
 (restas:define-module #:lweb
-    (:use #:cl #:postmodern #:iterate)
+    (:use #:cl #:postmodern #:iterate #:alexandria)
   (:export #:message-id 
 	   #:message-text 
 	   #:message-header 

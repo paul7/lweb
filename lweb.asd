@@ -1,5 +1,5 @@
 (defsystem #:lweb
-  :depends-on (#:restas #:closure-template #:postmodern)
+  :depends-on (#:restas #:closure-template #:postmodern #:alexandria)
   :components ((:module "src"
                         :components ((:file "defmodule")
 				     (:file "aux"

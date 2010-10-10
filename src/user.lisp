@@ -14,7 +14,7 @@
   (:metaclass dao-class))
 
 (defmacro defrole (role)
-  (let ((constant (symb '+user-can- role '+))
+  (let ((constant (symbolicate '+user-can- role '+))
 	(accessor (make-option-function 'user-can role)))
     `(progn
        (defun ,accessor (user)

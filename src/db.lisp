@@ -13,19 +13,19 @@
 	 ,@body)))
 
 (defmacro defmake (class)
-  `(defun ,(symb 'make- class) (&rest args)
+  `(defun ,(symbolicate 'make- class) (&rest args)
      (let ((msg (apply #'make-instance ',class args)))
        (ensure-connection
 	 (insert-dao msg)))))
 
 (defmacro defclear (class)
-  `(defun ,(symb 'clear- class) ()
+  `(defun ,(symbolicate 'clear- class) ()
        (ensure-connection 
 	 (execute (:delete-from ',class))
 	 (values))))
 
 (defmacro defget (class)
-  `(defun ,(symb 'get- class) (id &key (class ,(symb '* class '-class*)))
+  `(defun ,(symbolicate 'get- class) (id &key (class ,(symb '* class '-class*)))
      (ensure-connection
        (car (select-dao class (:= 'id id))))))
 
