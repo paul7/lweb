@@ -25,7 +25,7 @@
 	 (values))))
 
 (defmacro defget (class)
-  `(defun ,(symbolicate 'get- class) (id &key (class ,(symb '* class '-class*)))
+  `(defun ,(symbolicate 'get- class) (id &key (class ,(symbolicate '* class '-class*)))
      (ensure-connection
        (car (select-dao class (:= 'id id))))))
 
