@@ -1,15 +1,8 @@
 (in-package #:lweb)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun mkstr (&rest args)
-    (with-output-to-string (s)
-      (dolist (a args) (princ a s))))
-
-  (defun symb (&rest args)
-    (values (intern (apply #'mkstr args))))
-
   (defun make-option-function (prefix detail)
-    (symb prefix '- detail)))
+    (symbolicate prefix '- detail)))
 
 (defgeneric render-default (object))
 
