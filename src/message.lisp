@@ -50,11 +50,37 @@
 
 (defget message)
  
-(defun get-root-message-ids (&key (limit *index-limit*))
+(defun get-root-message-ids (&key around (limit *index-limit*))
   (ensure-connection 
-    (query (:order-by (:limit (:select 'id :from *message-class* :where (:= 'parent-id 0)) limit) 
-		      (:desc 'id))
-	   :column)))
+    (if around
+	(let ((half-limit (ceiling (/ limit 2))))
+	  (sort
+	   (query (:union
+		   (:limit
+		    (:order-by 
+		     (:select 'id :from *message-class* 
+			      :where (:and 
+				      (:= 'parent-id 0)
+				      (:< 'id around)))
+		     (:desc 'id))
+		    half-limit)
+		   (:limit
+		    (:order-by 
+		     (:select 'id :from *message-class* 
+			      :where (:and 
+				      (:= 'parent-id 0)
+				      (:>= 'id around)))
+		     'id)
+		    half-limit))
+		  :column)
+	   #'>))
+	  (query (:order-by 
+		(:limit 
+		 (:select 'id :from *message-class* 
+			  :where (:= 'parent-id 0)) 
+		 limit) 
+		(:desc 'id))
+	       :column))))
     
 (defmethod message-author (message)
   (render-default (get-user (message-author-id message))))

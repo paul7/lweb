@@ -81,6 +81,13 @@
 (defun message-posturl (msg)
   (restas:genurl 'message-post :parent (message-id msg)))
 
+(defun message-index (msg)
+  (declare (ignore msg))
+  (restas:genurl 'message-list))
+
+(defun message-around (msg)
+  (restas:genurl 'message-list-around :id (message-id msg)))
+
 (defun root-posturl ()
   (restas:genurl 'start-thread :parent 0))
 
