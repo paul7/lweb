@@ -38,9 +38,9 @@
         {call moderatorial-action-view data="$action" /}
       {/foreach}
       {if $current == $id}
-	{$header}
+	{$header |noAutoescape}
       {else}
-      <a href={$url}>{$header}</a>
+      <a href={$url}>{$header |noAutoescape}</a>
     {/if}
     </span>
   </span>
@@ -71,14 +71,16 @@
 {/template}
 
 {template message-view}
+  <a href="{$index}">Index</a>
+  <a href="{$around}">Around this message</a>
   <div class="head">
     {call user-view-brief data="$author" /}:
     <span class="header">
-      {$header}
+      {$header |noAutoescape}
     </span>
   </div>
   <div class="text">
-    {$text}
+    {$text |noAutoescape}
   </div>
   <br />
   {call message-tree-view data="$thread"}
@@ -92,10 +94,16 @@
   {/if}
 {/template}
 
+{template message-list-around}
+  {call message-list data="all" /}
+{/template}
+
 {template message-list}
-  <div class="menu">
-    <a href={$login}>Login</a>
-  </div>
+  {if $login}
+    <div class="menu">
+      <a href={$login}>Login</a>
+    </div>
+  {/if}
   {foreach $msg in $messages}
     {call message-tree-view data="$msg" /} <br />
   {/foreach}	
