@@ -25,13 +25,13 @@
       (let ((msg (get-message* id)))
 	(if msg
 	    (if (message-visible* msg)
-		(render :message (:thread 
-				  :user
-				  :writable
-				  :posturl 
-				  :index
-				  :around
-				  ) msg)
+		(render (:message-default 
+			 :thread 
+			 :user
+			 :writable
+			 :posturl 
+			 :index
+			 :around) msg)
 		(restas:redirect 'access-denied))
 	    hunchentoot:+http-not-found+))))
 
@@ -39,9 +39,10 @@
   (let ((messages (ensure-connection 
 		    (mapcar #'get-message* (get-root-message-ids))))
 	(user (ensure-auth *current-user*)))
-    (list :messages (mapcar #'message-thread messages)
+    (list :messages (mapcar #'message-thread 
+			    messages)
 	  :writable (user-can-start-threads user)
-	  :user (render :user () user)
+	  :user (render (:user-default) user)
 	  :posturl (root-posturl))))
 
 (restas:define-route message-list-around ("index/:id"
@@ -52,7 +53,7 @@
 	(user (ensure-auth *current-user*)))
     (list :messages (mapcar #'message-thread messages)
 	  :writable (user-can-start-threads user)
-	  :user (render :user () user)
+	  :user (render (:user-default) user)
 	  :posturl (root-posturl))))
 
 (restas:define-route start-thread ("new"

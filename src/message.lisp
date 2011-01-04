@@ -83,7 +83,7 @@
 	       :column))))
     
 (defmethod message-author (message)
-  (render-default (get-user (message-author-id message))))
+  (render (:user-default) (get-user (message-author-id message))))
 
 (defun message-root-id* (message)
   (let* ((root-id (message-root-id message))
@@ -104,7 +104,18 @@
 	      (map-subthread fn child))
 	  (message-children~ msg)))
 
-(defmethod render-default ((object message))
-  (build-render-list :message (:id :text :header :visible :root-id :author) 
-		     object))
-  
+(define-class-options message
+  (:id      (message-id message))
+  (:text    (message-text message))
+  (:header  (message-header message))
+  (:visible (message-visible message))
+  (:root-id (message-root-id message))
+  (:author  (message-author message)))
+
+(define-option-group (:message-default)
+  :id
+  :text
+  :header
+  :visible
+  :root-id
+  :author)

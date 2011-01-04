@@ -15,7 +15,7 @@
 
 (defmacro defrole (role)
   (let ((constant (symbolicate '+user-can- role '+))
-	(accessor (make-option-function 'user-can role)))
+	(accessor (symbolicate 'user-can- role)))
     `(progn
        (defun ,accessor (user)
 	 (not (zerop (logand ,constant
@@ -81,9 +81,13 @@
 	     :moderate           nil
 	     :start-threads      nil))
 
-(defmethod render-default ((object user))
-  (build-render-list :user (:id :nick) 
-		     object))
+(define-class-options user
+  (:id   (user-id user))
+  (:nick (user-nick user)))
+
+(define-option-group (:user-default)
+  :id
+  :nick)
 
 (defun user-anonymous ()
   (get-user 1))

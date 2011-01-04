@@ -30,63 +30,68 @@
 		 (restas:redirect 'access-denied)))
 	   (restas:redirect 'access-denied)))))
 
-(defun message-login (msg)
-  (restas:genurl 'login-form :id (message-id msg)))
+(defun message-thread (message)
+  (render (:message-default 
+	   :children 
+	   :url
+	   :moderatorial) (message-thread~ message)))
 
-(defun message-url (msg)
-  (restas:genurl 'message-view :id (message-id msg)))
+(define-class-options message
+  (:login   
+   (restas:genurl 'login-form :id (message-id message)))
 
-(defun message-moderatorial (msg)
-  (let* ((id (message-id msg))
-	 (return-self (hunchentoot:url-encode
-		       (restas:genurl 'message-view :id id)))
-	 (return-parent (hunchentoot:url-encode 
-			 (restas:genurl 'message-view :id (message-parent-id msg)))))
-    (if (user-can-moderate (ensure-auth *current-user*))
-	(nconc
-	 (list (if (message-visible msg)
-		   (list :caption "Hide"
-			 :route (restas:genurl 'hide 
-					       :id id
-					       :return return-self))
-		   (list :caption "Show"
-			 :route (restas:genurl 'show 
-					       :id id
-					       :return return-self)))) 
-	 (list (list :caption "Delete"
-		     :route (restas:genurl 'erase 
-					   :id id
-					   :return return-parent)))))))
+  (:url
+   (restas:genurl 'message-view :id (message-id message)))
 
-(defun message-children (msg)
-  (let ((children (message-children~ msg)))
-    (mapcar #'(lambda (child)
-		(render :message (:children :url :moderatorial) child))
-	    children)))
+  (:moderatorial 
+   (let* ((id (message-id message))
+	  (return-self (hunchentoot:url-encode
+			(restas:genurl 'message-view :id id)))
+	  (return-parent (hunchentoot:url-encode 
+			  (restas:genurl 'message-view :id (message-parent-id message)))))
+     (if (user-can-moderate (ensure-auth *current-user*))
+	 (nconc
+	  (list (if (message-visible message)
+		    (list :caption "Hide"
+			  :route (restas:genurl 'hide 
+						:id id
+						:return return-self))
+		    (list :caption "Show"
+			  :route (restas:genurl 'show 
+						:id id
+						:return return-self)))) 
+	  (list (list :caption "Delete"
+		      :route (restas:genurl 'erase 
+					    :id id
+					    :return return-parent)))))))
 
-(defun message-thread (msg)
-  (render :message (:children :url :moderatorial) 
-	  (message-thread~ msg)))
+  (:children
+   (let ((children (message-children~ message)))
+     (iter (for child in children)
+	   (collect (render (:message-default 
+			     :children 
+			     :url 
+			     :moderatorial) child)))))
 
-(defun message-user (msg)
-  (declare (ignore msg))
-  (ensure-auth
-    (render-default *current-user*)))
+  (:thread
+   (message-thread message))
 
-(defun message-writable (msg)
-  (declare (ignore msg))
-  (ensure-auth
-    (user-can-post *current-user*)))
+  (:user
+   (ensure-auth
+     (render (:user-default) *current-user*)))
 
-(defun message-posturl (msg)
-  (restas:genurl 'message-post :parent (message-id msg)))
+  (:writable
+   (ensure-auth
+     (user-can-post *current-user*)))
 
-(defun message-index (msg)
-  (declare (ignore msg))
-  (restas:genurl 'message-list))
-
-(defun message-around (msg)
-  (restas:genurl 'message-list-around :id (message-id msg)))
+  (:posturl
+   (restas:genurl 'message-post :parent (message-id message)))
+  
+  (:index
+   (restas:genurl 'message-list))
+  
+  (:around
+   (restas:genurl 'message-list-around :id (message-id message))))
 
 (defun root-posturl ()
   (restas:genurl 'start-thread :parent 0))

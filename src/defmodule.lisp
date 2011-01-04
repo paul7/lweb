@@ -1,16 +1,10 @@
 (restas:define-module #:lweb
     (:use #:cl #:postmodern #:iterate #:alexandria)
-  (:export #:message-id 
-	   #:message-text 
-	   #:message-header 
-	   #:message-visible 
-	   #:message-parent-id
-	   #:message-root-id 
-	   #:message-author
-	   #:message-children~
-	   #:message-thread~
-	   #:render-default
-	   #:build-render-list
+  (:export #:render
+	   #:define-option
+	   #:define-option-group
+	   #:define-class-option
+	   #:render-option
 	   #:*message-class*
 	   #:*index-limit*
 	   #:*reverse-order*))

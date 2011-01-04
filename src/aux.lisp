@@ -1,25 +1,5 @@
 (in-package #:lweb)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun make-option-function (prefix detail)
-    (symbolicate prefix '- detail)))
-
-(defgeneric render-default (object))
-
-(defmacro build-render-list (prefix (&rest details) object)
-  (let ((gobject (gensym)))
-    `(let ((,gobject ,object))
-       (declare (ignorable ,gobject))
-       (list ,@(mapcan #'(lambda (detail)
-			   `(,detail (,(make-option-function prefix detail) ,gobject)))
-		       details)))))
-
-(defmacro render (prefix (&rest details) object)
-  (let ((gobject (gensym)))
-    `(let ((,gobject ,object))
-       (nconc (build-render-list ,prefix ,details ,gobject)
-	      (render-default ,gobject)))))
-
 (defun split-on (predicate list)
   (let ((if-true nil)
 	(if-false nil))
