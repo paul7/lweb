@@ -36,7 +36,7 @@
 	   :url
 	   :moderatorial) (message-thread~ message)))
 
-(define-class-options message
+(define-class-options (message message-mixin)
   (:login   
    (restas:genurl 'login-form :id (message-id message)))
 

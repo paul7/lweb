@@ -2,21 +2,23 @@
 
 (defgeneric render-option (object option args))
 
-(defmacro define-option ((class name &rest args) &body body)
+(defmacro define-option ((object/class name &rest args) &body body)
   (with-gensyms (goption gargs)
-    `(defmethod render-option ((,class ,class)
-			       (,goption (eql ,name))
-			       ,gargs)
-       (destructuring-bind ,args ,gargs
-	 (list ,name
-	       (progn ,@body))))))
+    (destructuring-bind (object &optional (class object)) 
+	(ensure-list object/class)
+      `(defmethod render-option ((,object ,class)
+				 (,goption (eql ,name))
+				 ,gargs)
+	 (destructuring-bind ,args ,gargs
+	   (list ,name
+		 (progn ,@body)))))))
 
-(defmacro define-class-options (class &body options)
+(defmacro define-class-options (object/class &body options)
   `(progn
      ,@(iter 
 	(for (spec . body) in options)
 	(destructuring-bind (name &rest args) (ensure-list spec)
-	  (collect `(define-option (,class ,name ,@args)
+	  (collect `(define-option (,object/class ,name ,@args)
 		      ,@body))))))
 
 (defmacro define-option-group ((name &rest args) &body contract)
@@ -47,10 +49,13 @@
    (b :initform 6
       :accessor test-b)))
 
-(define-class-options test
-  (:a (test-a test))
-  (:b (test-b test))
-  ((:a+y y) (+ y y (test-a test))))
+(define-option ((x test) :aa)
+  (test-a x))
+
+(define-class-options (x test)
+  (:a (test-a x))
+  (:b (test-b x))
+  ((:a+y y) (+ y y (test-a x))))
 
 (define-option-group (:default2 y)
   :a

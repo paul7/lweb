@@ -1,6 +1,9 @@
 (in-package #:lweb)
 
-(defclass message ()
+(defclass message-mixin ()
+  ())
+
+(defclass message (message-mixin)
   ((id        :col-type serial 
 	      :accessor message-id)
    (text      :col-type text 
@@ -104,7 +107,7 @@
 	      (map-subthread fn child))
 	  (message-children~ msg)))
 
-(define-class-options message
+(define-class-options (message message-mixin)
   (:id      (message-id message))
   (:text    (message-text message))
   (:header  (message-header message))
