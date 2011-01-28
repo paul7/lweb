@@ -8,14 +8,13 @@
 					    :depends-on ("defmodule"))
 				     (:file "db"
 					    :depends-on ("aux"))
-				     (:file "message"
-					    :depends-on ("db"
-							 "render"))
-				     (:file "user"
-					    :depends-on ("db"
-							 "render"))
 				     (:file "web-aux"
-					    :depends-on ("message"
-							 "user"))
+					    :depends-on ("db"
+							 "render"))
+				     (:file "message"
+					    :depends-on ("web-aux"))
+				     (:file "user"
+					    :depends-on ("web-aux"))
 				     (:file "board"
-					    :depends-on ("web-aux"))))))
+					    :depends-on ("message"
+							 "user"))))))

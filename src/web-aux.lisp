@@ -30,86 +30,31 @@
 		 (restas:redirect 'access-denied)))
 	   (restas:redirect 'access-denied)))))
 
-(defun message-thread (message)
-  (render (:message-default 
-	   :children 
-	   :url
-	   :moderatorial) (message-thread~ message)))
+(defmethod render-user ((object t))
+  (ensure-auth
+   (render (:user-default) *current-user*)))
 
-(define-class-options (message message-mixin)
-  (:login   
-   (restas:genurl 'login-form :id (message-id message)))
-
-  (:url
-   (restas:genurl 'message-view :id (message-id message)))
-
-  (:moderatorial 
-   (let* ((id (message-id message))
-	  (return-self (hunchentoot:url-encode
-			(restas:genurl 'message-view :id id)))
-	  (return-parent (hunchentoot:url-encode 
-			  (restas:genurl 'message-view :id (message-parent-id message)))))
-     (if (user-can-moderate (ensure-auth *current-user*))
-	 (nconc
-	  (list (if (message-visible message)
-		    (list :caption "Hide"
-			  :route (restas:genurl 'hide 
-						:id id
-						:return return-self))
-		    (list :caption "Show"
-			  :route (restas:genurl 'show 
-						:id id
-						:return return-self)))) 
-	  (list (list :caption "Delete"
-		      :route (restas:genurl 'erase 
-					    :id id
-					    :return return-parent)))))))
-
-  (:children
-   (let ((children (message-children~ message)))
-     (iter (for child in children)
-	   (collect (render (:message-default 
-			     :children 
-			     :url 
-			     :moderatorial) child)))))
-
-  (:thread
-   (message-thread message))
-
-  (:user
-   (ensure-auth
-     (render (:user-default) *current-user*)))
-
-  (:writable
-   (ensure-auth
-     (user-can-post *current-user*)))
-
-  (:posturl
-   (restas:genurl 'message-post :parent (message-id message)))
-  
-  (:index
-   (restas:genurl 'message-list))
-  
-  (:around
-   (restas:genurl 'message-list-around :id (message-id message))))
+(defmethod render-writable ((object t))
+  (ensure-auth
+   (user-can-post *current-user*)))
 
 (defun root-posturl ()
   (restas:genurl 'start-thread :parent 0))
 
-(defun message-visible* (msg)
-  (or (message-visible msg)
+(defun render-visible* (msg)
+  (or (render-visible msg)
       (ensure-auth
 	(user-can-moderate *current-user*))))
 
 (defun build-tree (msg-id)
   (let ((msg (get-message msg-id)))
     (if msg
-	(let* ((root-id (message-root-id* msg))
+	(let* ((root-id (render-root-id* msg))
 	       (root (get-message root-id))
 	       (msg-in-tree nil)
 	       (elements 
 		(ensure-auth
-		  (remove-if-not #'message-visible*
+		  (remove-if-not #'render-visible*
 				 (cons root 
 				       (ensure-connection 
 					 (if *reverse-order* 
@@ -121,12 +66,12 @@
 							 'id)))))))
 	       (parents (copy-seq elements)))
 	  (mapc #'(lambda (each)
-		    (let ((id (message-id each)))
+		    (let ((id (render-id each)))
 		      (if (= id msg-id)
 			  (setf msg-in-tree each))
 		      (multiple-value-bind (ours theirs)
 			  (split-on #'(lambda (each)
-					(= (message-parent-id each) id))
+					(= (render-parent-id each) id))
 				    elements)
 			(setf (message-children~ each) ours)
 			(setf elements theirs))))

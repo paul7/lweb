@@ -2,16 +2,22 @@
 
 (defclass user ()
   ((id    :col-type serial
-          :accessor user-id)
+          :accessor user-id
+	  :reader   render-id)
    (nick  :col-type text
 	  :initarg :nick
-	  :accessor user-nick)
+	  :accessor user-nick
+	  :reader   render-nick)
    (roles :col-type integer
 	  :initarg :roles
 	  :initform 0
 	  :accessor user-roles))
   (:keys id)
   (:metaclass dao-class))
+
+(define-option-group :user-default
+  :id
+  :nick)
 
 (defmacro defrole (role)
   (let ((constant (symbolicate '+user-can- role '+))
@@ -80,14 +86,6 @@
 	     :post-postmoderated nil
 	     :moderate           nil
 	     :start-threads      nil))
-
-(define-class-options user
-  (:id   (user-id user))
-  (:nick (user-nick user)))
-
-(define-option-group (:user-default)
-  :id
-  :nick)
 
 (defun user-anonymous ()
   (get-user 1))

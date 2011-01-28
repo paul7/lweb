@@ -24,7 +24,7 @@
       (restas:redirect 'message-list)
       (let ((msg (get-message* id)))
 	(if msg
-	    (if (message-visible* msg)
+	    (if (render-visible* msg)
 		(render (:message-default 
 			 :thread 
 			 :user
@@ -39,7 +39,7 @@
   (let ((messages (ensure-connection 
 		    (mapcar #'get-message* (get-root-message-ids))))
 	(user (ensure-auth *current-user*)))
-    (list :messages (mapcar #'message-thread 
+    (list :messages (mapcar #'render-thread 
 			    messages)
 	  :writable (user-can-start-threads user)
 	  :user (render (:user-default) user)
@@ -51,7 +51,7 @@
 		    (mapcar #'get-message* 
 			    (get-root-message-ids :around id))))
 	(user (ensure-auth *current-user*)))
-    (list :messages (mapcar #'message-thread messages)
+    (list :messages (mapcar #'render-thread messages)
 	  :writable (user-can-start-threads user)
 	  :user (render (:user-default) user)
 	  :posturl (root-posturl))))
