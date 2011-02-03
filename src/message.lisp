@@ -14,7 +14,8 @@
   :header
   :visible
   :root-id
-  :author)
+  :author
+  :ignored)
 
 (defmethod render-login ((message message-mixin))
   (restas:genurl 'login-form :id (render-id message)))
@@ -101,7 +102,12 @@
    (author-id :col-type integer 
 	      :initform 1
 	      :initarg :author-id
-	      :accessor message-author-id))
+	      :accessor message-author-id)
+   (ignored   :col-type boolean
+	      :initform nil
+	      :initarg  :ignored
+	      :accessor message-ignored
+	      :reader   render-ignored))
   (:keys id)
   (:metaclass dao-class))
 
