@@ -71,7 +71,9 @@
 
 (defclear user)
 
-(defget user)
+(defun get-user (id)
+  (ensure-connection 
+    (get-dao 'user id)))
 
 (defun make-owner (&key nick)
   (make-user :nick nick

@@ -36,7 +36,7 @@
 
 (defmethod render-writable ((object t))
   (ensure-auth
-   (user-can-post *current-user*)))
+    (user-can-post *current-user*)))
 
 (defun root-posturl ()
   (restas:genurl 'start-thread :parent 0))
@@ -58,12 +58,12 @@
 				 (cons root 
 				       (ensure-connection 
 					 (if *reverse-order* 
-					     (select-dao *message-class* 
-							 (:= 'root-id root-id)
-							 (:desc 'id))
-					     (select-dao *message-class* 
-							 (:= 'root-id root-id)
-							 'id)))))))
+					     (make-instances 
+					      *message-class* 
+					      (db-messages-in-thread/reverse root-id))
+					     (make-instances 
+					      *message-class* 
+					      (db-messages-in-thread root-id))))))))
 	       (parents (copy-seq elements)))
 	  (mapc #'(lambda (each)
 		    (let ((id (render-id each)))

@@ -24,11 +24,6 @@
 	 (execute (:delete-from ',class))
 	 (values))))
 
-(defmacro defget (class)
-  `(defun ,(symbolicate 'get- class) (id &key (class ,(symbolicate '* class '-class*)))
-     (ensure-connection
-       (car (select-dao class (:= 'id id))))))
-
 (defun create-table-for-class (class)
   (ensure-connection
     (execute (dao-table-definition class))
@@ -50,4 +45,58 @@
       (ensure-connection
 	(mapc #'drop-table-for-class '(message user))))
   (values))
-  
+
+(defun make-instances (class inits)
+  (iter (for init in inits)
+	(collect (apply #'make-instance class init))))
+
+(defprepared db-init-message "
+select * from message 
+where id = $1
+"
+  :plist)
+
+(defprepared db-root-ids "
+select id from message
+where 
+	parent_id = 0
+order by id desc
+limit $1
+"
+  :column)
+
+(defprepared db-root-ids-around "
+(select id from message
+where 
+	parent_id = 0
+	and
+	id < $1
+order by id desc
+limit $2)
+	union
+(select id from message
+where 
+	parent_id = 0
+	and
+	id >= $1
+order by id
+limit $2)
+"
+  :column)
+
+(defprepared db-messages-in-thread "
+select * from message
+where
+	root_id = $1
+order by id
+"
+  :plists)
+    
+(defprepared db-messages-in-thread/reverse "
+select * from message
+where 
+	root_id = $1
+order by id desc
+"
+  :plists)
+    
