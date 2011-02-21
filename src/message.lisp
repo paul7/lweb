@@ -14,8 +14,7 @@
   :header
   :visible
   :root-id
-  :author
-  :ignored)
+  :author)
 
 (defmethod render-login ((message message-mixin))
   (restas:genurl 'login-form :id (render-id message)))
@@ -102,12 +101,7 @@
    (author-id :col-type integer 
 	      :initform 1
 	      :initarg :author-id
-	      :accessor message-author-id)
-   (ignored   :col-type boolean
-	      :initform nil
-	      :initarg  :ignored
-	      :accessor message-ignored
-	      :reader   render-ignored))
+	      :accessor message-author-id))
   (:keys id)
   (:metaclass dao-class))
 
@@ -117,12 +111,24 @@
       (setf (message-root-id msg) 
 	    (render-root-id* (get-message (message-parent-id msg))))))
 
+(defclass ignored-message ()
+  ((user-id    :col-type integer
+	       :initform 0
+	       :initarg :user-id
+	       :accessor ignored-message-user-id)
+   (message-id :col-type integer 
+	       :initform 0
+	       :initarg :user-id
+	       :accessor ignored-message-message-id))
+  (:keys user-id message-id)
+  (:metaclass dao-class))
+
 (defmake message)
 
 (defclear message)
 
 (defget message)
- 
+
 (defun get-root-message-ids (&key around (limit *index-limit*))
   (ensure-connection 
     (if around
