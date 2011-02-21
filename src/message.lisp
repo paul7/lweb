@@ -14,8 +14,7 @@
   :header
   :visible
   :root-id
-  :author
-  :ignored)
+  :author)
 
 (defmethod render-login ((message message-mixin))
   (restas:genurl 'login-form :id (render-id message)))
@@ -69,7 +68,8 @@
   (restas:genurl 'message-list-around :id (render-id message)))
 
 (defclass message (message-mixin)
-  ((id        :col-type serial 
+  ((id        :col-type serial
+	      :initarg :id
 	      :accessor message-id
 	      :reader   render-id)
    (text      :col-type text 
@@ -102,12 +102,7 @@
    (author-id :col-type integer 
 	      :initform 1
 	      :initarg :author-id
-	      :accessor message-author-id)
-   (ignored   :col-type boolean
-	      :initform nil
-	      :initarg  :ignored
-	      :accessor message-ignored
-	      :reader   render-ignored))
+	      :accessor message-author-id))
   (:keys id)
   (:metaclass dao-class))
 
@@ -117,43 +112,27 @@
       (setf (message-root-id msg) 
 	    (render-root-id* (get-message (message-parent-id msg))))))
 
+(defmethod init-message ((class (eql 'message)) id)
+  (db-init-message id))
+
+(defun get-message (id &key (class *message-class*))
+  (ensure-connection
+    (let ((init (init-message class id)))
+      (when init
+	(apply #'make-instance class init)))))
+
 (defmake message)
 
 (defclear message)
-
-(defget message)
  
 (defun get-root-message-ids (&key around (limit *index-limit*))
   (ensure-connection 
     (if around
 	(let ((half-limit (ceiling (/ limit 2))))
 	  (sort
-	   (query (:union
-		   (:limit
-		    (:order-by 
-		     (:select 'id :from *message-class* 
-			      :where (:and 
-				      (:= 'parent-id 0)
-				      (:< 'id around)))
-		     (:desc 'id))
-		    half-limit)
-		   (:limit
-		    (:order-by 
-		     (:select 'id :from *message-class* 
-			      :where (:and 
-				      (:= 'parent-id 0)
-				      (:>= 'id around)))
-		     'id)
-		    half-limit))
-		  :column)
+	   (db-root-ids-around around half-limit)
 	   #'>))
-	  (query (:order-by 
-		(:limit 
-		 (:select 'id :from *message-class* 
-			  :where (:= 'parent-id 0)) 
-		 limit) 
-		(:desc 'id))
-	       :column))))
+	(db-root-ids limit))))
     
 (defmethod render-author ((message message-mixin))
   (render (:user-default) (get-user (message-author-id message))))
