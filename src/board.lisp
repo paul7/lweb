@@ -22,7 +22,7 @@
 				   :parse-vars (list :id #'parse-integer))
   (if (zerop id)
       (restas:redirect 'message-list)
-      (let ((msg (get-message* id)))
+      (let ((msg (get-message id)))
 	(if msg
 	    (if (render-visible* msg)
 		(render (:message-default 
@@ -37,7 +37,7 @@
 
 (restas:define-route message-list ("index")
   (let ((messages (ensure-connection 
-		    (mapcar #'get-message* (get-root-message-ids))))
+		    (mapcar #'get-message (get-root-message-ids))))
 	(user (ensure-auth *current-user*)))
     (list :messages (mapcar #'render-thread 
 			    messages)
@@ -48,7 +48,7 @@
 (restas:define-route message-list-around ("index/:id"
 					  :parse-vars (list :id #'parse-integer))
   (let ((messages (ensure-connection 
-		    (mapcar #'get-message* 
+		    (mapcar #'get-message 
 			    (get-root-message-ids :around id))))
 	(user (ensure-auth *current-user*)))
     (list :messages (mapcar #'render-thread messages)

@@ -106,12 +106,6 @@
   (:keys id)
   (:metaclass dao-class))
 
-(defmethod initialize-instance :after ((msg message) &key)
-  (if (and (zerop (message-root-id msg))
-	   (not (zerop (message-parent-id msg))))
-      (setf (message-root-id msg) 
-	    (render-root-id* (get-message (message-parent-id msg))))))
-
 (defclass ignored-message ()
   ((user-id    :col-type integer
 	       :initform 0
@@ -124,16 +118,27 @@
   (:keys user-id message-id)
   (:metaclass dao-class))
 
-(defmethod init-message ((class (eql 'message)) id)
-  (db-init-message id))
-
+(defmethod id-thread-messages ((class (eql 'message)) id)
+  (make-instances class
+		  (if *reverse-order* 
+		      (db-messages-in-thread/reverse id)
+		      (db-messages-in-thread id))))
+      
 (defun get-message (id &key (class *message-class*))
   (ensure-connection
-    (let ((init (init-message class id)))
-      (when init
-	(apply #'make-instance class init)))))
+    (ensure-auth 
+      (let ((msgs (remove-if-not #'render-visible* 
+				 (id-thread-messages class id))))
+	(when msgs
+	  (build-tree id msgs))))))
 
-(defmake message)
+(defmake message
+  (when (zerop (message-root-id message))
+    (setf (message-root-id message)
+	  (if (zerop (message-parent-id message))
+	      (message-id message)
+	      (message-root-id (get-message 
+				(message-parent-id message)))))))
 
 (defclear message)
 
@@ -148,19 +153,6 @@
     
 (defmethod render-author ((message message-mixin))
   (render (:user-default) (get-user (message-author-id message))))
-
-(defun render-root-id* (message)
-  (let* ((root-id (render-root-id message))
-	 (root-id* (if (zerop root-id)
-		       (render-id message)
-		       root-id)))
-    root-id*))
-    
-(defun get-message* (id)
-  (multiple-value-bind (thread msg) (build-tree id)
-    (when msg
-      (setf (message-thread~ msg) thread)
-      msg)))
 
 (defun map-subthread (fn msg)
   (funcall fn msg)

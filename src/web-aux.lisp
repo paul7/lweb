@@ -22,7 +22,7 @@
     `(restas:define-route ,name (,route
 				 :parse-vars (list :id #'parse-integer))
        (if (user-can-moderate (ensure-auth *current-user*))
-	   (let ((message (get-message* id)))
+	   (let ((message (get-message id)))
 	     (if message
 		 (progn 
 		   ,@body
@@ -45,39 +45,6 @@
   (or (render-visible msg)
       (ensure-auth
 	(user-can-moderate *current-user*))))
-
-(defun build-tree (msg-id)
-  (let ((msg (get-message msg-id)))
-    (if msg
-	(let* ((root-id (render-root-id* msg))
-	       (root (get-message root-id))
-	       (msg-in-tree nil)
-	       (elements 
-		(ensure-auth
-		  (remove-if-not #'render-visible*
-				 (cons root 
-				       (ensure-connection 
-					 (if *reverse-order* 
-					     (make-instances 
-					      *message-class* 
-					      (db-messages-in-thread/reverse root-id))
-					     (make-instances 
-					      *message-class* 
-					      (db-messages-in-thread root-id))))))))
-	       (parents (copy-seq elements)))
-	  (mapc #'(lambda (each)
-		    (let ((id (render-id each)))
-		      (if (= id msg-id)
-			  (setf msg-in-tree each))
-		      (multiple-value-bind (ours theirs)
-			  (split-on #'(lambda (each)
-					(= (render-parent-id each) id))
-				    elements)
-			(setf (message-children~ each) ours)
-			(setf elements theirs))))
-		parents)
-	  (values root
-		  msg-in-tree)))))
 
 (defun message-post-check (&key parent-id header text)
   (declare (ignore text parent-id))
