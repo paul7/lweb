@@ -4,6 +4,9 @@
   ((children~ :initform nil
 	      :initarg :children
 	      :accessor message-children~)
+   (parent~   :initform nil
+	      :initarg :parent
+	      :accessor message-parent~)
    (thread~   :initform nil
 	      :initarg :thread
 	      :accessor message-thread~)))
