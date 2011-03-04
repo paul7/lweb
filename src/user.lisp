@@ -91,3 +91,7 @@
 
 (defun user-anonymous ()
   (get-user 1))
+
+(defmacro with-user-id (id &body body)
+  `(let ((*current-user* (get-user ,id)))
+     ,@body))

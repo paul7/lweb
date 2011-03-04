@@ -121,17 +121,17 @@
   (:keys user-id message-id)
   (:metaclass dao-class))
 
-(defmethod id-thread-messages ((class (eql 'message)) id)
-  (make-instances class
+(defmethod id-thread-messages ((storage db-storage) id)
+  (make-instances *message-class*
 		  (if *reverse-order* 
 		      (db-messages-in-thread/reverse id)
 		      (db-messages-in-thread id))))
       
-(defun get-message (id &key (class *message-class*))
+(defun get-message (id)
   (ensure-connection
     (ensure-auth 
       (let ((msgs (remove-if-not #'render-visible* 
-				 (id-thread-messages class id))))
+				 (id-thread-messages *db-storage* id))))
 	(when msgs
 	  (build-tree id msgs))))))
 
@@ -145,14 +145,20 @@
 
 (defclear message)
 
-(defun get-root-message-ids (&key around (limit *index-limit*))
-  (ensure-connection 
+(defmethod root-ids ((storate db-storage) &key around limit)
+  (ensure-auth 
     (if around
 	(let ((half-limit (ceiling (/ limit 2))))
 	  (sort
-	   (db-root-ids-around around half-limit)
+	   (db-root-ids-around around half-limit (user-can-moderate *current-user*))
 	   #'>))
-	(db-root-ids limit))))
+	(db-root-ids limit (user-can-moderate *current-user*)))))
+  
+(defun get-root-message-ids (&key around (limit *index-limit*))
+  (ensure-connection 
+    (root-ids *db-storage*
+	      :limit limit 
+	      :around around)))
     
 (defmethod render-author ((message message-mixin))
   (render (:user-default) (get-user (message-author-id message))))
@@ -162,4 +168,3 @@
   (mapcar #'(lambda (child)
 	      (map-subthread fn child))
 	  (message-children~ msg)))
-

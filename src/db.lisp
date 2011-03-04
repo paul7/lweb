@@ -1,6 +1,13 @@
 (in-package #:lweb)
 
+(defclass db-storage ()
+  ((spec :initarg :spec
+	 :reader  db-storage-spec)))
+
 (defparameter *db-spec* '("lispdb" "lisp" "lisp" "localhost" :pooled-p t))
+
+(defparameter *db-storage* 
+  (make-instance 'db-storage :spec *db-spec*))
 
 (defparameter *message-class* 'message)
 
@@ -9,7 +16,7 @@
 (defmacro ensure-connection (&body body)
   `(if *database*
        (progn ,@body)
-       (with-connection *db-spec*
+       (with-connection (db-storage-spec *db-storage*)
 	 ,@body)))
 
 (defmacro defmake (object/class &body body)
@@ -81,16 +88,14 @@
 	(setf (message-thread~ msg-in-tree) root))
       msg-in-tree)))
 
-(defprepared db-init-message "
-select * from message 
-where id = $1
-"
-  :plist)
-
 (defprepared db-root-ids "
 select id from message
 where 
 	parent_id = 0
+and
+	($2
+	or
+	visible)
 order by id desc
 limit $1
 "
@@ -100,7 +105,11 @@ limit $1
 (select id from message
 where 
 	parent_id = 0
-	and
+and
+	($3
+	or
+	visible)
+and
 	id < $1
 order by id desc
 limit $2)
@@ -108,7 +117,11 @@ limit $2)
 (select id from message
 where 
 	parent_id = 0
-	and
+and
+	($3
+	or
+	visible)
+and
 	id >= $1
 order by id
 limit $2)

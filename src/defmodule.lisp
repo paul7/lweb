@@ -1,6 +1,9 @@
 (restas:define-module #:lweb
     (:use #:cl #:postmodern #:iterate #:alexandria)
   (:export #:message-mixin
+	   #:db-storage
+	   #:id-thread-messages
+	   #:root-ids
 	   #:render-id
 	   #:render-text
 	   #:render-header
@@ -10,6 +13,8 @@
 	   #:render-author
 	   #:render-message-default
 	   #:render
+	   #:ensure-connection
+	   #:ensure-auth
 	   #:define-option-group
 	   #:*message-class*
 	   #:*index-limit*
