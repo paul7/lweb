@@ -116,16 +116,22 @@
 	       :accessor ignored-message-user-id)
    (message-id :col-type integer 
 	       :initform 0
-	       :initarg :user-id
-	       :accessor ignored-message-message-id))
+	       :initarg :message-id
+	       :accessor ignored-message-id))
   (:keys user-id message-id)
   (:metaclass dao-class))
 
+(defmake ignored-message)
+
+(defclear ignored-message)
+
 (defmethod id-thread-messages ((storage db-storage) id)
-  (make-instances *message-class*
-		  (if *reverse-order* 
-		      (db-messages-in-thread/reverse id)
-		      (db-messages-in-thread id))))
+  (ensure-auth 
+    (let ((uid (user-id *current-user*)))
+      (make-instances *message-class*
+		      (if *reverse-order* 
+			  (db-messages-in-thread/reverse id uid)
+			  (db-messages-in-thread id uid))))))
       
 (defun get-message (id)
   (ensure-connection
