@@ -89,12 +89,21 @@
       msg-in-tree)))
 
 (defprepared db-root-ids "
-select id from message
+select m.id from 
+	message m
+left join 
+	(select message_id 
+	from ignored_message
+	where user_id = $3) i
+on 
+	m.id = i.message_id
 where 
 	parent_id = 0
+and 
+	i.message_id is null
 and
 	($2
-	or
+       	or
 	visible)
 order by id desc
 limit $1
@@ -102,28 +111,52 @@ limit $1
   :column)
 
 (defprepared db-root-ids-around "
-(select id from message
+(select id 
+from 
+	message m
+left join 
+	(select message_id 
+	from 
+		ignored_message
+	where 
+		user_id = $4) i
+on 
+	m.id = i.message_id
 where 
-	parent_id = 0
+	m.parent_id = 0
+and
+	i.message_id is null
 and
 	($3
 	or
-	visible)
+	m.visible)
 and
-	id < $1
-order by id desc
+	m.id < $1
+order by m.id desc
 limit $2)
 	union
-(select id from message
+(select m.id 
+from 
+	message m
+left join 
+	(select message_id 
+	from 
+		ignored_message
+	where 
+		user_id = $4) i
+on 
+	m.id = i.message_id
 where 
-	parent_id = 0
+	m.parent_id = 0
+and
+	i.message_id is null
 and
 	($3
 	or
-	visible)
+	m.visible)
 and
-	id >= $1
-order by id
+	m.id >= $1
+order by m.id
 limit $2)
 "
   :column)
@@ -148,16 +181,19 @@ order by r.id
   :plists)
 
 (defprepared db-messages-in-thread/reverse "
-select r.* from 
+select r.* 
+from 
 	(message l
-	inner join
+inner join
 	message r
-	using (root_id))
-	left join
-	(select message_id 
-	from ignored_message
-	where user_id = $2) i
-	on (r.id = i.message_id)
+using (root_id))
+left join
+(select message_id 
+from 
+	ignored_message
+where 
+	user_id = $2) i
+on (r.id = i.message_id)
 where
 	l.id = $1
 and

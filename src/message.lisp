@@ -153,12 +153,18 @@
 
 (defmethod root-ids ((storate db-storage) &key around limit)
   (ensure-auth 
-    (if around
-	(let ((half-limit (ceiling (/ limit 2))))
-	  (sort
-	   (db-root-ids-around around half-limit (user-can-moderate *current-user*))
-	   #'>))
-	(db-root-ids limit (user-can-moderate *current-user*)))))
+    (let ((uid (user-id *current-user*)))
+      (if around
+	  (let ((half-limit (ceiling (/ limit 2))))
+	    (sort
+	     (db-root-ids-around around 
+				 half-limit 
+				 (user-can-moderate *current-user*)
+				 uid)
+	     #'>))
+	  (db-root-ids limit
+		       (user-can-moderate *current-user*)
+		       uid)))))
   
 (defun get-root-message-ids (&key around (limit *index-limit*))
   (ensure-connection 
