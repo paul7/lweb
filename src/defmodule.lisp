@@ -26,11 +26,17 @@
 
 (defparameter *reverse-order* nil)
 
+(defparameter *developer-mode* nil)
+
 (defun recompile-templates ()
-  (closure-template:compile-template :common-lisp-backend
-				     (merge-pathnames "src/board.tmpl"
-						      (asdf:component-pathname (asdf:find-system '#:lweb))))
-  (values))
+  (let ((sb-ext:*evaluator-mode* 
+	 (if *developer-mode* 
+	     :interpret 
+	     sb-ext:*evaluator-mode*)))
+    (closure-template:compile-template :common-lisp-backend
+				       (merge-pathnames "src/board.tmpl"
+							(asdf:component-pathname (asdf:find-system '#:lweb))))
+    (values)))
 
 (recompile-templates)
 
