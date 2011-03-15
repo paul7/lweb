@@ -78,14 +78,15 @@
 		(iter (for child in ours)
 		      (setf (message-parent~ child) each))
 		(setf elements theirs))
-	      (when (and (= id msg-id)
-			 (or (= id root-id)
-			     (message-parent~ each)))
+	      (when (= id msg-id)
 		(setf msg-in-tree each))
 	      (when (= id root-id)
 		(setf root each))))
       (when msg-in-tree
-	(setf (message-thread~ msg-in-tree) root))
+	(if (or (= msg-id root-id)
+		(message-parent~ msg-in-tree))
+	    (setf (message-thread~ msg-in-tree) root)
+	    (setf msg-in-tree nil)))
       msg-in-tree)))
 
 (defprepared db-root-ids "
