@@ -163,42 +163,35 @@ limit $2)
   :column)
 
 (defprepared db-messages-in-thread "
-select r.* from 
-	(message l
-	inner join
-	message r
-	using (root_id))
+select * 
+from 
+	message m
 	left join
 	(select message_id 
 	from ignored_message
 	where user_id = $2) i
-	on (r.id = i.message_id)
+	on (m.id = i.message_id)
 where
-	l.id = $1
+	m.root_id = (select root_id from message where id = $1)
 and
 	i.message_id is null
-order by r.id
+order by m.id
 "
   :plists)
 
 (defprepared db-messages-in-thread/reverse "
-select r.* 
+select * 
 from 
-	(message l
-inner join
-	message r
-using (root_id))
-left join
-(select message_id 
-from 
-	ignored_message
-where 
-	user_id = $2) i
-on (r.id = i.message_id)
+	message m
+	left join
+	(select message_id 
+	from ignored_message
+	where user_id = $2) i
+	on (m.id = i.message_id)
 where
-	l.id = $1
+	m.root_id = (select root_id from message where id = $1)
 and
 	i.message_id is null
-order by r.id desc
+order by m.id desc
 "
   :plists)
