@@ -2,6 +2,11 @@
 
 (defparameter *current-user* nil)
 
+(defmacro with-test-environment (&body body)
+  `(let ((*current-user* (user-anonymous)))
+     (ensure-connection 
+       ,@body)))
+
 (defun get-current-user ()
   (let* ((cookie-id (parse-integer 
 		     (or (hunchentoot:cookie-in "uid") "1") 
