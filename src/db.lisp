@@ -19,6 +19,17 @@
        (with-connection (db-storage-spec *db-storage*)
 	 ,@body)))
 
+(defmacro defprepared/named (name (&rest args) 
+			     (query &optional (format :rows)) 
+			     &body body)
+  (let ((prepared-name (gensym (symbol-name name)))
+	(required-args (parse-ordinary-lambda-list args)))
+    `(progn 
+       (defprepared ,prepared-name ,query ,format)
+       (defun ,name ,args
+	 ,@body
+	 (,prepared-name ,@required-args)))))
+
 (defmacro defmake (object/class &body body)
   (destructuring-bind (object &optional (class object)) 
       (ensure-list object/class)
@@ -89,7 +100,7 @@
 	    (setf msg-in-tree nil)))
       msg-in-tree)))
 
-(defprepared db-root-ids "
+(defprepared/named db-root-ids (limit moderator-p uid) ("
 select m.id from 
 	message m
 left join 
@@ -108,10 +119,10 @@ and
 	visible)
 order by id desc
 limit $1
-"
-  :column)
+" :column))
+  
 
-(defprepared db-root-ids-around "
+(defprepared/named db-root-ids-around (id limit moderator-p uid) ("
 (select id 
 from 
 	message m
@@ -159,10 +170,9 @@ and
 	m.id >= $1
 order by m.id
 limit $2)
-"
-  :column)
+" :column))
 
-(defprepared db-messages-in-thread "
+(defprepared/named db-messages-in-thread (id uid) ("
 select * 
 from 
 	message m
@@ -176,10 +186,9 @@ where
 and
 	i.message_id is null
 order by m.id
-"
-  :plists)
+" :plists))
 
-(defprepared db-messages-in-thread/reverse "
+(defprepared/named db-messages-in-thread/reverse (id uid) ("
 select * 
 from 
 	message m
@@ -193,5 +202,4 @@ where
 and
 	i.message_id is null
 order by m.id desc
-"
-  :plists)
+" :plists))
