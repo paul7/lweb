@@ -24,11 +24,21 @@
 			     &body body)
   (let ((prepared-name (gensym (symbol-name name)))
 	(required-args (parse-ordinary-lambda-list args)))
-    `(progn 
-       (defprepared ,prepared-name ,query ,format)
-       (defun ,name ,args
-	 ,@body
-	 (,prepared-name ,@required-args)))))
+    (with-gensyms (gresult gnone)
+      `(progn 
+	 (defprepared ,prepared-name ,query ,format)
+	 (defun ,name ,args
+	   (let ((,gresult ',gnone))
+	     (macrolet ((execute-query (&rest args)
+			  `(setf ,',gresult 
+				 (,',prepared-name 
+				  ,@(or args ',required-args))))
+			(return-from-query (&optional result)
+			  `(setf ,',gresult ,result)))
+	       ,@body
+	       (if (eq ,gresult ',gnone)
+		   (execute-query)
+		   ,gresult))))))))
 
 (defmacro defmake (object/class &body body)
   (destructuring-bind (object &optional (class object)) 
