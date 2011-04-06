@@ -127,11 +127,9 @@
 
 (defmethod id-thread-messages ((storage db-storage) id)
   (ensure-auth 
-    (let ((uid (user-id *current-user*)))
-      (make-instances *message-class*
-		      (if *reverse-order* 
-			  (db-messages-in-thread/reverse id uid)
-			  (db-messages-in-thread id uid))))))
+    (make-instances *message-class*
+		    (db-messages-in-thread id *current-user*
+					   :reverse *reverse-order*))))
       
 (defun get-message (id)
   (ensure-connection
@@ -151,20 +149,14 @@
 
 (defclear message)
 
-(defmethod root-ids ((storate db-storage) &key around limit)
-  (ensure-auth 
-    (let ((uid (user-id *current-user*)))
-      (if around
-	  (let ((half-limit (ceiling (/ limit 2))))
-	    (sort
-	     (db-root-ids-around around 
-				 half-limit 
-				 (user-can-moderate *current-user*)
-				 uid)
-	     #'>))
-	  (db-root-ids limit
-		       (user-can-moderate *current-user*)
-		       uid)))))
+(defmethod root-ids ((storage db-storage) &key around limit)
+  (ensure-auth
+    (if around
+	(db-root-ids-around around 
+			    *current-user*
+			    limit)
+	(db-root-ids *current-user*
+		     limit))))
   
 (defun get-root-message-ids (&key around (limit *index-limit*))
   (ensure-connection 

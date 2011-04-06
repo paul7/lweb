@@ -27,22 +27,23 @@
 			     (query &optional (format :rows)) 
 			     &body body)
   (let ((prepared-name (gensym (symbol-name name)))
-	(required-args (parse-ordinary-lambda-list args)))
-    (with-gensyms (gresult gnone)
+	(required-args (parse-ordinary-lambda-list args))
+	(execute-query (symbolicate 'execute-query)))
+    (with-gensyms (gresult grun-p)
       `(progn 
 	 (defprepared ,prepared-name ,query ,format)
 	 (defun ,name ,args
-	   (let ((,gresult ',gnone))
-	     (macrolet ((execute-query (&rest args)
-			  `(setf ,',gresult 
-				 (,',prepared-name 
-				  ,@(or args ',required-args))))
-			(return-from-query (&optional result)
-			  `(setf ,',gresult ,result)))
-	       ,@body
-	       (if (eq ,gresult ',gnone)
-		   (execute-query)
-		   ,gresult))))))))
+	   (let ((,grun-p nil))
+	     (macrolet ((,execute-query (&rest args)
+			  `(progn 
+			     (setf ,',grun-p t)
+			     (,',prepared-name 
+			      ,@(or args ',required-args)))))
+	       (let ((,gresult (progn ,@body)))
+		 (declare (ignorable ,gresult))
+		 (if ,grun-p
+		     ,gresult
+		     (,execute-query))))))))))
 
 (defmacro defmake (object/class &body body)
   (destructuring-bind (object &optional (class object)) 
@@ -114,7 +115,7 @@
 	    (setf msg-in-tree nil)))
       msg-in-tree)))
 
-(defprepared/named db-root-ids (limit moderator-p uid) ("
+(defprepared/named db-root-ids (user limit) ("
 select m.id from 
 	message m
 left join 
@@ -133,10 +134,12 @@ and
 	visible)
 order by id desc
 limit $1
-" :column))
-  
+" :column)
+  (let ((uid (user-id user))
+	(moderator-p (user-can-moderate user)))
+    (sort (execute-query limit moderator-p uid) #'>)))
 
-(defprepared/named db-root-ids-around (id limit moderator-p uid) ("
+(defprepared/named db-root-ids-around (id user limit) ("
 (select id 
 from 
 	message m
@@ -184,9 +187,13 @@ and
 	m.id >= $1
 order by m.id
 limit $2)
-" :column))
+" :column)
+  (let ((uid (user-id user))
+	(moderator-p (user-can-moderate user))
+	(half-limit (ceiling (/ limit 2))))
+    (sort (execute-query id half-limit moderator-p uid) #'>)))
 
-(defprepared/named db-messages-in-thread (id uid) ("
+(defprepared/named db-messages-in-thread (id user &key reverse) ("
 select * 
 from 
 	message m
@@ -199,21 +206,7 @@ where
 	m.root_id = (select root_id from message where id = $1)
 and
 	i.message_id is null
-order by m.id
-" :plists))
-
-(defprepared/named db-messages-in-thread/reverse (id uid) ("
-select * 
-from 
-	message m
-	left join
-	(select message_id 
-	from ignored_message
-	where user_id = $2) i
-	on (m.id = i.message_id)
-where
-	m.root_id = (select root_id from message where id = $1)
-and
-	i.message_id is null
-order by m.id desc
-" :plists))
+order by $3 * m.id
+" :plists)
+  (let ((uid (user-id user)))
+    (execute-query id uid (if reverse -1 1))))
