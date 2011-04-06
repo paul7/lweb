@@ -13,10 +13,14 @@
 
 (defparameter *user-class* 'user)
 
+(defmacro with-storage (storage &body body)
+  `(with-connection (db-storage-spec ,storage)
+     ,@body))
+
 (defmacro ensure-connection (&body body)
   `(if *database*
        (progn ,@body)
-       (with-connection (db-storage-spec *db-storage*)
+       (with-storage ,(symbolicate '*db-storage*)
 	 ,@body)))
 
 (defmacro defprepared/named (name (&rest args) 
