@@ -45,23 +45,6 @@
 		     ,gresult
 		     (,execute-query))))))))))
 
-(defmacro defmake (object/class &body body)
-  (destructuring-bind (object &optional (class object)) 
-      (ensure-list object/class)
-    `(defun ,(symbolicate 'make- class) (&rest args)
-       (let ((,object (apply #'make-instance ',class args)))
-	 (ensure-connection
-	   (insert-dao ,object)
-	   ,@(if body
-		 `(,@body
-		   (update-dao ,object))))))))
-
-(defmacro defclear (class)
-  `(defun ,(symbolicate 'clear- class) ()
-       (ensure-connection 
-	 (execute (:delete-from ',class))
-	 (values))))
-
 (defun create-table-for-class (class)
   (ensure-connection
     (execute (dao-table-definition class))
@@ -87,6 +70,25 @@
 (defun make-instances (class inits)
   (iter (for init in inits)
 	(collect (apply #'make-instance class init))))
+
+(defgeneric make-dao (class &rest args &key &allow-other-keys))
+
+(defmethod make-dao ((class symbol) &rest args &key &allow-other-keys)
+  (apply #'make-dao (find-class class) args))
+
+(defmethod make-dao ((class dao-class) &rest args &key &allow-other-keys)
+  (let ((instance (apply #'make-instance class args)))
+    (insert-dao instance)))
+
+(defmacro define-finalize-dao ((class &rest keyword-args) &body body)
+  (with-gensyms (gargs)
+    `(defmethod make-dao :around ((class (eql ',class)) 
+				  &rest ,gargs 
+				  &key ,@keyword-args &allow-other-keys)
+       (declare (ignorable ,gargs))
+       (let ((dao (call-next-method)))
+	 ,@body
+	 (update-dao dao)))))
 
 (defun build-tree (msg-id elements)
   (when elements

@@ -121,15 +121,10 @@
   (:keys user-id message-id)
   (:metaclass dao-class))
 
-(defmake ignored-message)
-
-(defclear ignored-message)
-
 (defmethod id-thread-messages ((storage db-storage) id)
-  (ensure-auth 
-    (make-instances *message-class*
-		    (db-messages-in-thread id *current-user*
-					   :reverse *reverse-order*))))
+  (make-instances *message-class*
+		  (db-messages-in-thread id *current-user*
+					 :reverse *reverse-order*)))
       
 (defun get-message (id)
   (ensure-connection
@@ -139,15 +134,13 @@
 	(when msgs
 	  (build-tree id msgs))))))
 
-(defmake message
-  (when (zerop (message-root-id message))
-    (setf (message-root-id message)
-	  (if (zerop (message-parent-id message))
-	      (message-id message)
+(define-finalize-dao (message)
+  (when (zerop (message-root-id dao))
+    (setf (message-root-id dao)
+	  (if (zerop (message-parent-id dao))
+	      (message-id dao)
 	      (message-root-id (get-message 
-				(message-parent-id message)))))))
-
-(defclear message)
+				(message-parent-id dao)))))))
 
 (defmethod root-ids ((storage db-storage) &key around limit)
   (ensure-auth

@@ -61,49 +61,51 @@
 				   :render-method #'lweb.view:message-post 
 				   :requirement #'(lambda ()
 						    (hunchentoot:post-parameter "send")))
-  (let ((header (hunchentoot:post-parameter "header"))
-	(text (hunchentoot:post-parameter "text"))
-	(user (ensure-auth 
-		*current-user*)))
-    (if (user-can-start-threads user)
-	(if (message-post-check :parent-id 0
-				:header header
-				:text text)
-	    (progn
-	      (make-message :parent-id 0
+  (ensure-auth 
+    (let ((header (hunchentoot:post-parameter "header"))
+	  (text (hunchentoot:post-parameter "text")))
+      (if (user-can-start-threads *current-user*)
+	  (if (message-post-check :parent-id 0
+				  :header header
+				  :text text)
+	      (progn
+		(ensure-connection
+		  (make-dao *message-class*
+			    :parent-id 0
 			    :header header
 			    :text text
 			    :visible t
-			    :author-id (user-id user))
-	      (restas:redirect 'message-list))
-	    (list :error "empty topic"
-		  :return (restas:genurl 'message-list)))
-	(restas:redirect 'access-denied))))
+			    :author-id (user-id *current-user*)))
+		(restas:redirect 'message-list))
+	      (list :error "empty topic"
+		    :return (restas:genurl 'message-list)))
+	  (restas:redirect 'access-denied)))))
 
 (restas:define-route message-post (":parent"
 				   :method :post
 				   :requirement #'(lambda ()
 						    (hunchentoot:post-parameter "send"))
 				   :parse-vars (list :parent #'parse-integer))
-  (let ((header (hunchentoot:post-parameter "header"))
-	(text (hunchentoot:post-parameter "text"))
-	(user (ensure-auth 
-		*current-user*)))
-    (if (user-can-post user)
-	(if (message-post-check :parent-id parent
-				:header header
-				:text text)
-	    (progn
-	      (make-message :parent-id parent
+  (ensure-auth 
+    (let ((header (hunchentoot:post-parameter "header"))
+	  (text (hunchentoot:post-parameter "text")))
+      (if (user-can-post *current-user*)
+	  (if (message-post-check :parent-id parent
+				  :header header
+				  :text text)
+	      (progn
+		(ensure-connection
+		  (make-dao *message-class*
+			    :parent-id parent
 			    :header header
 			    :text text
-			    :visible (user-can-post-postmoderated user)
-			    :author-id (user-id user))
-	      (restas:redirect 'message-view 
-			       :id parent))
-	    (list :error "empty topic"
-		  :return parent))
-	(restas:redirect 'access-denied))))
+			    :visible (user-can-post-postmoderated *current-user*)
+			    :author-id (user-id *current-user*)))
+		(restas:redirect 'message-view 
+				 :id parent))
+	      (list :error "empty topic"
+		    :return parent))
+	  (restas:redirect 'access-denied)))))
 
 (restas:define-route access-denied ("stop")
   (list :reason 42))

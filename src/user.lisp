@@ -67,23 +67,21 @@
   (if start-p
       (setf (user-can-start-threads user) start-threads)))
 
-(defmake user)
-
-(defclear user)
-
 (defun get-user (id)
   (ensure-connection 
     (get-dao 'user id)))
 
 (defun make-owner (&key nick)
-  (make-user :nick nick
-	     :post-premoderated  t
-	     :post-postmoderated t
-	     :moderate           t
-	     :start-threads      t))
+  (make-dao 'user
+	    :nick nick
+	    :post-premoderated  t
+	    :post-postmoderated t
+	    :moderate           t
+	    :start-threads      t))
 
 (defun make-anonymous (&key (nick "anonymous"))
-  (make-user :nick nick
+  (make-user 'user
+	     :nick nick
 	     :post-premoderated  t
 	     :post-postmoderated nil
 	     :moderate           nil
