@@ -30,7 +30,7 @@
 (defparameter *developer-mode* nil)
 
 (defun recompile-templates ()
-  (let ((sb-ext:*evaluator-mode* 
+  (let (#+sbcl(sb-ext:*evaluator-mode* 
 	 (if *developer-mode* 
 	     :interpret 
 	     sb-ext:*evaluator-mode*)))
