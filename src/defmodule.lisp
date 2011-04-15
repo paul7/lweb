@@ -2,9 +2,11 @@
     (:use #:cl #:postmodern #:iterate #:alexandria)
   (:export #:message-mixin
 	   #:db-storage
+	   #:make-instances
 	   #:id-thread-messages
 	   #:root-ids
 	   #:render-id
+	   #:render-display-id
 	   #:render-text
 	   #:render-header
 	   #:render-visible
@@ -26,18 +28,4 @@
 (defparameter *index-limit* 10)
 
 (defparameter *reverse-order* nil)
-
-(defparameter *developer-mode* nil)
-
-(defun recompile-templates ()
-  (let (#+sbcl(sb-ext:*evaluator-mode* 
-	 (if *developer-mode* 
-	     :interpret 
-	     sb-ext:*evaluator-mode*)))
-    (closure-template:compile-template :common-lisp-backend
-				       (merge-pathnames "src/board.tmpl"
-							(asdf:component-pathname (asdf:find-system '#:lweb))))
-    (values)))
-
-(recompile-templates)
 

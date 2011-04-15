@@ -1,5 +1,14 @@
 (in-package #:lweb)
 
+(defparameter *developer-mode* nil)
+
+(defmacro with-developer-mode (&body body)
+  `(let (#+sbcl (sb-ext:*evaluator-mode* 
+		 (if *developer-mode* 
+		     :interpret 
+		     sb-ext:*evaluator-mode*)))
+     ,@body))
+
 (defun split-on (predicate list)
   (let ((if-true nil)
 	(if-false nil))

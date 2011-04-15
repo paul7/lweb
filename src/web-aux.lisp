@@ -1,5 +1,14 @@
 (in-package #:lweb)
 
+(defun recompile-templates ()
+  (with-developer-mode
+    (closure-template:compile-template :common-lisp-backend
+				       (merge-pathnames "src/board.tmpl"
+							(asdf:component-pathname (asdf:find-system '#:lweb))))
+    (values)))
+
+(recompile-templates)
+
 (defparameter *current-user* nil)
 
 (defmacro with-test-environment (&body body)

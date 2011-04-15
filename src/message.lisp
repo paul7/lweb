@@ -12,6 +12,7 @@
 	      :accessor message-thread~)))
 
 (define-option-group :message-default
+  :display-id
   :id
   :text
   :header
@@ -20,13 +21,13 @@
   :author)
 
 (defmethod render-login ((message message-mixin))
-  (restas:genurl 'login-form :id (render-id message)))
+  (restas:genurl 'login-form :id (render-display-id message)))
 
 (defmethod render-url ((message message-mixin))
-  (restas:genurl 'message-view :id (render-id message)))
+  (restas:genurl 'message-view :id (render-display-id message)))
 
 (defmethod render-moderatorial ((message message-mixin))
-  (let* ((id (render-id message))
+  (let* ((id (render-display-id message))
 	 (return-self (hunchentoot:url-encode
 		       (restas:genurl 'message-view :id id)))
 	 (return-parent (hunchentoot:url-encode 
@@ -62,19 +63,20 @@
 	   :moderatorial) (message-thread~ message)))
 
 (defmethod render-posturl ((message message-mixin))
-  (restas:genurl 'message-post :parent (render-id message)))
+  (restas:genurl 'message-post :parent (render-display-id message)))
   
 (defmethod render-index ((object t))
   (restas:genurl 'message-list))
   
 (defmethod render-around ((message message-mixin))
-  (restas:genurl 'message-list-around :id (render-id message)))
+  (restas:genurl 'message-list-around :id (render-display-id message)))
 
 (defclass message (message-mixin)
   ((id        :col-type serial
 	      :initarg :id
 	      :accessor message-id
-	      :reader   render-id)
+	      :reader   render-id
+	      :reader   render-display-id)
    (text      :col-type text 
 	      :initform "hello world" 
 	      :initarg :text 
@@ -143,19 +145,19 @@
 				(message-parent-id dao)))))))
 
 (defmethod root-ids ((storage db-storage) &key around limit)
-  (ensure-auth
-    (if around
-	(db-root-ids-around around 
-			    *current-user*
-			    limit)
-	(db-root-ids *current-user*
-		     limit))))
+  (if around
+      (db-root-ids-around around 
+			  *current-user*
+			  limit)
+      (db-root-ids *current-user*
+		   limit)))
   
 (defun get-root-message-ids (&key around (limit *index-limit*))
   (ensure-connection 
-    (root-ids *db-storage*
-	      :limit limit 
-	      :around around)))
+    (ensure-auth 
+      (root-ids *db-storage*
+		:limit limit 
+		:around around))))
     
 (defmethod render-author ((message message-mixin))
   (render (:user-default) (get-user (message-author-id message))))
