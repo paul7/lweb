@@ -36,9 +36,9 @@
 	    hunchentoot:+http-not-found+))))
 
 (restas:define-route message-list ("index")
-  (let ((messages (ensure-connection 
+  (let ((messages (with-storage *db-storage* 
 		    (mapcar #'get-message (get-root-message-ids))))
-	(user (ensure-auth *current-user*)))
+	(user (with-auth *current-user*)))
     (list :messages (mapcar #'render-thread 
 			    messages)
 	  :writable (user-can-start-threads user)
@@ -47,10 +47,10 @@
 
 (restas:define-route message-list-around ("index/:id"
 					  :parse-vars (list :id #'parse-integer))
-  (let ((messages (ensure-connection 
+  (let ((messages (with-storage *db-storage*
 		    (mapcar #'get-message 
 			    (get-root-message-ids :around id))))
-	(user (ensure-auth *current-user*)))
+	(user (with-auth *current-user*)))
     (list :messages (mapcar #'render-thread messages)
 	  :writable (user-can-start-threads user)
 	  :user (render (:user-default) user)
@@ -61,7 +61,7 @@
 				   :render-method #'lweb.view:message-post 
 				   :requirement #'(lambda ()
 						    (hunchentoot:post-parameter "send")))
-  (ensure-auth 
+  (with-auth 
     (let ((header (hunchentoot:post-parameter "header"))
 	  (text (hunchentoot:post-parameter "text")))
       (if (user-can-start-threads *current-user*)
@@ -69,7 +69,7 @@
 				  :header header
 				  :text text)
 	      (progn
-		(ensure-connection
+		(with-storage *db-storage*
 		  (make-dao *message-class*
 			    :parent-id 0
 			    :header header
@@ -86,7 +86,7 @@
 				   :requirement #'(lambda ()
 						    (hunchentoot:post-parameter "send"))
 				   :parse-vars (list :parent #'parse-integer))
-  (ensure-auth 
+  (with-auth 
     (let ((header (hunchentoot:post-parameter "header"))
 	  (text (hunchentoot:post-parameter "text")))
       (if (user-can-post *current-user*)
@@ -94,7 +94,7 @@
 				  :header header
 				  :text text)
 	      (progn
-		(ensure-connection
+		(with-storage *db-storage*
 		  (make-dao *message-class*
 			    :parent-id parent
 			    :header header
@@ -129,17 +129,17 @@
 
 (define-message-action show
   (setf (message-visible message) t)
-  (ensure-connection 
+  (with-storage *db-storage*
     (update-dao message)))
 
 (define-message-action hide
-  (ensure-connection
+  (with-storage *db-storage* 
     (map-subthread #'(lambda (msg)
 		       (setf (message-visible msg) nil)
 		       (update-dao msg))
 		   message)))
 		       
 (define-message-action erase
-  (ensure-connection
+  (with-storage *db-storage*
     (map-subthread #'delete-dao
 		   message)))

@@ -32,7 +32,7 @@
 		       (restas:genurl 'message-view :id id)))
 	 (return-parent (hunchentoot:url-encode 
 			 (restas:genurl 'message-view :id (render-parent-id message)))))
-    (if (user-can-moderate (ensure-auth *current-user*))
+    (if (user-can-moderate (with-auth *current-user*))
 	(nconc
 	 (list (if (render-visible message)
 		   (list :caption "Hide"
@@ -124,19 +124,18 @@
   (:metaclass dao-class))
 
 (defmethod id-thread-messages ((storage db-storage) id)
-  (make-instances *message-class*
-		  (db-messages-in-thread id *current-user*
-					 :reverse *reverse-order*)))
+  (db-messages-in-thread id *current-user*
+			 :reverse *reverse-order*))
       
 (defun get-message (id)
-  (ensure-connection
-    (ensure-auth 
+  (with-storage *db-storage* 
+    (with-auth 
       (let ((msgs (remove-if-not #'render-visible* 
 				 (id-thread-messages *db-storage* id))))
 	(when msgs
 	  (build-tree id msgs))))))
 
-(define-finalize-dao (message)
+(define-dao-finalization ((dao message))
   (when (zerop (message-root-id dao))
     (setf (message-root-id dao)
 	  (if (zerop (message-parent-id dao))
@@ -149,12 +148,13 @@
       (db-root-ids-around around 
 			  *current-user*
 			  limit)
-      (db-root-ids *current-user*
-		   limit)))
+      (sort (db-root-ids *current-user*
+			 limit)
+	    #'>)))
   
 (defun get-root-message-ids (&key around (limit *index-limit*))
-  (ensure-connection 
-    (ensure-auth 
+  (with-storage *db-storage* 
+    (with-auth 
       (root-ids *db-storage*
 		:limit limit 
 		:around around))))

@@ -13,7 +13,7 @@
 
 (defmacro with-test-environment (&body body)
   `(let ((*current-user* (user-anonymous)))
-     (ensure-connection 
+     (with-storage (symbolicate '*db-storage*)
        ,@body)))
 
 (defun get-current-user ()
@@ -23,7 +23,7 @@
 	 (user (get-user cookie-id)))
     (or user (user-anonymous))))
 
-(defmacro ensure-auth (&body body)
+(defmacro with-auth (&body body)
   `(if *current-user*
        (progn ,@body)
        (let ((*current-user* (get-current-user)))
@@ -35,7 +35,7 @@
 			    "/:id/:return")))
     `(restas:define-route ,name (,route
 				 :parse-vars (list :id #'parse-integer))
-       (if (user-can-moderate (ensure-auth *current-user*))
+       (if (user-can-moderate (with-auth *current-user*))
 	   (let ((message (get-message id)))
 	     (if message
 		 (progn 
@@ -45,11 +45,11 @@
 	   (restas:redirect 'access-denied)))))
 
 (defmethod render-user ((object t))
-  (ensure-auth
-   (render (:user-default) *current-user*)))
+  (with-auth
+    (render (:user-default) *current-user*)))
 
 (defmethod render-writable ((object t))
-  (ensure-auth
+  (with-auth
     (user-can-post *current-user*)))
 
 (defun root-posturl ()
@@ -57,7 +57,7 @@
 
 (defun render-visible* (msg)
   (or (render-visible msg)
-      (ensure-auth
+      (with-auth
 	(user-can-moderate *current-user*))))
 
 (defun message-post-check (&key parent-id header text)

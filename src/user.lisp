@@ -68,7 +68,7 @@
       (setf (user-can-start-threads user) start-threads)))
 
 (defun get-user (id)
-  (ensure-connection 
+  (with-storage *db-storage* 
     (get-dao 'user id)))
 
 (defun make-owner (&key nick)

@@ -15,9 +15,8 @@
 	   #:render-author
 	   #:render-message-default
 	   #:render
-	   #:ensure-connection
 	   #:defprepared/named
-	   #:ensure-auth
+	   #:with-auth
 	   #:define-option-group
 	   #:*message-class*
 	   #:*index-limit*
