@@ -1,5 +1,8 @@
 (in-package #:lweb)
 
+(defparameter *implementation-info* (list :type (lisp-implementation-type)
+					  :version (lisp-implementation-version)))
+
 (setf *default-render-method*
       #'(lambda (obj)
 	  (closure-template.standard:xhtml-strict-frame
@@ -8,8 +11,7 @@
 			(list 
 			 :login (restas:genurl 'login-form 
                                                :return (hunchentoot:url-encode (hunchentoot:request-uri*)))
-			 :impl (list :type (lisp-implementation-type)
-				     :version (lisp-implementation-version))
+			 :impl *implementation-info*
 			 :index (restas:genurl 'message-list)
 			 :body (restas:render-object 
 				(find-package ':lweb.view)

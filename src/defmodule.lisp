@@ -2,7 +2,7 @@
     (:use #:cl #:postmodern #:iterate #:alexandria)
   (:export #:message-mixin
 	   #:db-storage
-	   #:make-instances
+	   #:with-storage
 	   #:id-thread-messages
 	   #:root-ids
 	   #:render-id
@@ -15,9 +15,8 @@
 	   #:render-author
 	   #:render-message-default
 	   #:render
-	   #:defprepared/named
-	   #:with-auth
 	   #:define-option-group
+	   #:with-auth
 	   #:*message-class*
 	   #:*index-limit*
 	   #:*reverse-order*))

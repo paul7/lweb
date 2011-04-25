@@ -14,8 +14,14 @@
 (defparameter *user-class* 'user)
 
 (defmacro with-storage (storage &body body)
-  `(with-connection (db-storage-spec ,storage)
-     ,@body))
+  `(let ((ext-database *database*)
+	 (*database* *database*))
+     (unless ext-database
+       (setf *database* (apply #'connect (db-storage-spec ,storage))))
+     (unwind-protect (progn
+		       ,@body)
+       (unless ext-database
+	 (disconnect *database*)))))
 
 (defun create-table-for-class (class)
   (with-storage *db-storage*

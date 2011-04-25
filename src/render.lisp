@@ -1,10 +1,14 @@
 (in-package #:lweb)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun option-getter-name (name)
+    (symbolicate 'render- name)))
+
 (defmacro define-option-group (name/args &body contract)
   (with-gensyms (gobject gargs)
     (destructuring-bind (name &rest args) (ensure-list name/args)
       `(progn
-	 (defmethod ,(symbolicate 'render- name) 
+	 (defmethod ,(option-getter-name name) 
 	     ((,gobject t) &rest ,gargs)
 	   (destructuring-bind ,args ,gargs
 	     (values
@@ -20,7 +24,7 @@
 	   (destructuring-bind (name &rest args) (ensure-list spec)
 	     (collect 
 		 `(multiple-value-bind (,gresult ,gsplice)
-		      (apply #',(symbolicate 'render- name)
+		      (apply #',(option-getter-name name)
 			     ,gobject 
 			     (list ,@args))
 		    (if ,gsplice
